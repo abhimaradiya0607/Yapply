@@ -20,11 +20,6 @@ export const register = async (req: Request, res: Response) => {
       user,
     });
   } catch (error) {
-    // This prints the complete error in your terminal
-    console.error("========== REGISTER ERROR ==========");
-    console.error(error);
-    console.error("====================================");
-
     if (
       error instanceof Error &&
       error.message.includes("already registered")
