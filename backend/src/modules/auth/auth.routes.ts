@@ -6,7 +6,7 @@ import { validateBody } from "../../middlewares/validate.middleware.js";
 
 const router=express.Router();
 
-router.get('/register',validateBody(registerSchema),register);
+router.post('/register',validateBody(registerSchema),register);
 
 // router.get('/api/auth/login',login)
 

@@ -9,6 +9,8 @@ export interface JwtPayload extends JWTPayload {
 }
 export const generateToken=(payload:JwtPayload):Promise<string>=>{
     const secret = process.env.JWT_SECRET;
+    const expiresIn = process.env.JWT_EXPIRE || "7d";
+    
     if (!secret) {
       throw new Error("JWT_SECRET is not defined");
     }
@@ -16,7 +18,7 @@ export const generateToken=(payload:JwtPayload):Promise<string>=>{
 
     return new SignJWT(payload)
     .setProtectedHeader({alg:'HS256'})
-    .setExpirationTime(process.env.JWT_EXPIRE||'7d')
+    .setExpirationTime(expiresIn)
     .setIssuedAt()
     .sign(secretkey);
 }
