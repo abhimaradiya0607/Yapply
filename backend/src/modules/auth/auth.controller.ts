@@ -1,5 +1,5 @@
 import type { Request, Response } from "express";
-import { loginUser, logoutUser, registerUser } from "./auth.service.js";
+import { loginUser, loginWithGoogle, logoutUser, registerUser } from "./auth.service.js";
 
 
 export const register = async (req: Request, res: Response) => {
@@ -80,6 +80,44 @@ export const login=async (req:Request,res:Response) => {
     });
   }
 }
+
+export const googlelogin=async (req:Request,res:Response) => {
+  try {
+    //step-1 check the code from frontend
+    const { code } = req.body;
+
+    if (!code || typeof code !== "string") {
+      return res.status(400).json({
+        success: false,
+        message: "Google authorization code is required",
+      });
+    }
+
+    const { user, token } = await loginWithGoogle(code);
+
+    res.cookie("jwt", token, {
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+      httpOnly: true,
+      sameSite: "strict",
+      secure: process.env.NODE_ENV === "production",
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: "Google login successful",
+      user,
+    });
+
+  } catch (error) {
+    console.error("Google login error:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Google login failed",
+});
+  }
+};
+
 
 export const logout=async (req:Request,res:Response) => {
 

@@ -5,7 +5,7 @@ export const users=pgTable('users',{
     id:uuid('id').primaryKey().defaultRandom(),
     fullname:varchar('full_name',{length:255}).notNull(),
     email:varchar('email',{length:255}).notNull().unique(),
-    passwordHash:varchar('password_hash',{length:255}).notNull(),
+    passwordHash:varchar('password_hash',{length:255}),
     bio:text('bio').default(""),
     profileurl:varchar('avatar_url',{length: 500}).default(""),
     nativelanguage:varchar('native_language',{length:100}).default(""),
