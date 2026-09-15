@@ -25,4 +25,13 @@ export const registerSchema = z.object({
       .max(72, "Password cannot exceed 72 characters"),
   });
   
-  export type RegisterInput = z.infer<typeof registerSchema>;
+export type RegisterInput = z.infer<typeof registerSchema>;
+
+
+export const loginSchema=z.object({
+  email: z.email("Invalid email address"),
+  password: z.string().min(6, "Password must contain at least 8 characters")
+  .max(72, "Password cannot exceed 72 characters"),
+})
+
+export type loginInput=z.infer<typeof loginSchema>;
