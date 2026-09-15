@@ -1,7 +1,8 @@
 import express from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";
-import authRoutes from './modules/auth/auth.routes.js'
+import authRoutes from './modules/auth/auth.routes.js';
+import userRoutes from './modules/users/user.routes.js';
 
 
 const app = express();
@@ -18,6 +19,7 @@ app.use(cookieParser());
 
 
 app.use('/api/auth',authRoutes);
+app.use("/api/users", userRoutes);
 
 app.get("/", (_req, res) => {
   res.json({ message: "Yapply API is running" });

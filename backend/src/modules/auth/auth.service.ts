@@ -7,6 +7,8 @@ import { generateToken } from "../../utils/jwt.js";
 import { googleClient } from "../../config/google-oauth.js";
 import { AppError } from "../../utils/app-error.js";
 import { oauthAccounts } from "../../db/schema/oauth-accounts.schema.js";
+import { upsertStreamUser } from "../../utils/stream.js";
+import { generateAvatarUrl } from "../../utils/avatar.js";
 
 export const registerUser = async (data: RegisterInput) => {
 
@@ -26,29 +28,59 @@ export const registerUser = async (data: RegisterInput) => {
 
   const passwordHash = await hashPassword(data.password);
 
-  const idx = Math.floor(Math.random() * 100) + 1;
+  const [createdUser] = await db
+  .insert(users)
+  .values({
+    fullname: data.fullname,
+    email: data.email,
+    passwordHash,
+  })
+  .returning({
+    id: users.id,
+    fullname: users.fullname,
+    email: users.email,
+    profileurl: users.profileurl,
+    isonboarded: users.isonboarded,
+    createdAt: users.createdAt,
+  });
 
-  const randomAvatar = `https://avatarapi.runflare.run/public/${idx}.png`;
+  if (!createdUser) {
+    throw new Error("User registration failed");
+  }
+
+  const profileurl = generateAvatarUrl(createdUser.id);
 
   const [user] = await db
-    .insert(users)
-    .values({
-      fullname: data.fullname,
-      email: data.email,
-      passwordHash,
-      profileurl: randomAvatar,
-    })
-    .returning({
-      id: users.id,
-      fullname: users.fullname,
-      email: users.email,
-      profileurl: users.profileurl,
-      isonboarded: users.isonboarded,
-      createdAt: users.createdAt,
-    });
+  .update(users)
+  .set({
+    profileurl,
+    updatedAt: new Date(),
+  })
+  .where(eq(users.id, createdUser.id))
+  .returning({
+    id: users.id,
+    fullname: users.fullname,
+    email: users.email,
+    profileurl: users.profileurl,
+    isonboarded: users.isonboarded,
+    createdAt: users.createdAt,
+  });
 
-  if (!user) {
-    throw new Error("User registration failed");
+if (!user) {
+  throw new Error("Unable to save user avatar");
+}
+
+  try {
+    await upsertStreamUser({
+      id:user.id.toString(),
+      name:user.fullname,
+      image:user.profileurl??"",
+    })
+    console.log(`Stream user created for ${user.fullname}`);
+  } catch (error) {
+    console.error("Stream user creation failed:", error);
+
+    throw new Error("Error creating stream user ");
   }
 
   const token = await generateToken({
@@ -195,11 +227,6 @@ export const loginWithGoogle = async (code: string) => {
       );
     }
 
-    // Generate a random avatar.
-    // This avatar will be used if Google does not provide a profile picture.
-    const idx = Math.floor(Math.random() * 100) + 1;
-    const randomAvatar = `https://avatarapi.runflare.run/public/${idx}.png`;
-
     // Create the user and OAuth account inside one transaction.
     // If either insert fails, both operations are rolled back.
     user = await db.transaction(async (tx) => {
@@ -212,7 +239,7 @@ export const loginWithGoogle = async (code: string) => {
 
           // Use Google's picture if available.
           // Otherwise, use the generated random avatar.
-          profileurl: googleUser.picture ?? randomAvatar,
+          profileurl: googleUser.picture ?? "",
 
           // Google users do not have a Yapply password.
           passwordHash: null,
@@ -232,15 +259,39 @@ export const loginWithGoogle = async (code: string) => {
         throw new AppError("Unable to create Yapply user", 500);
       }
 
+      const finalProfileUrl =createdUser.profileurl || generateAvatarUrl(createdUser.id);
+
+      const [updatedUser] = await tx
+      .update(users)
+      .set({
+        profileurl: finalProfileUrl,
+        updatedAt: new Date(),
+      })
+      .where(eq(users.id, createdUser.id))
+      .returning({
+        id: users.id,
+        fullname: users.fullname,
+        email: users.email,
+        profileurl: users.profileurl,
+        isonboarded: users.isonboarded,
+        createdAt: users.createdAt,
+      });
+
+      if (!updatedUser) {
+        throw new AppError("Unable to save Google user avatar", 500);
+      }
+
+
+
       // Step 5B-2: Connect the Google account to the new Yapply user.
       await tx.insert(oauthAccounts).values({
-        userId: createdUser.id,
+        userId: updatedUser.id,
         provider: "google",
         providerAccountId: googleAccountId,
       });
 
       // Return the newly created user from the transaction.
-      return createdUser;
+      return updatedUser;
     });
   }
 
@@ -263,3 +314,4 @@ export const logoutUser=async() => {
     message: "User logged out successfully",
   };
 }
+
