@@ -27,6 +27,7 @@
     "google-auth-library": "^11.0.2",
     "jose": "^6.2.12",
     "pg": "^8.16.3",
+    "stream-chat": "^9.52.1",
     "zod": "^4.6.5"
   },
   "devDependencies": {
