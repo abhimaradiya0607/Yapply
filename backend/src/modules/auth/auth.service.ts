@@ -2,8 +2,11 @@ import type { loginInput, RegisterInput } from "./auth.validation.js";
 import { comparePassword, hashPassword } from "../../utils/passwords.js";
 import { users } from "../../db/schema/users.schema.js";
 import { db } from "../../db/connection.js";
-import { eq } from "drizzle-orm";
+import { eq,and } from "drizzle-orm";
 import { generateToken } from "../../utils/jwt.js";
+import { googleClient } from "../../config/google-oauth.js";
+import { AppError } from "../../utils/app-error.js";
+import { oauthAccounts } from "../../db/schema/oauth-accounts.schema.js";
 
 export const registerUser = async (data: RegisterInput) => {
 
@@ -76,6 +79,12 @@ export const loginUser=async (loginData:loginInput) => {
     throw new Error("Invalid credentials");
   }
 
+  if (!user.passwordHash) {
+    throw new Error(
+      "This account uses Google login. Continue with Google instead."
+    );
+  }
+
   const passCheck=await comparePassword(loginData.password,user.passwordHash);
 
   if(!passCheck){
@@ -94,6 +103,160 @@ export const loginUser=async (loginData:loginInput) => {
     token,
   }
 }
+
+export const loginWithGoogle = async (code: string) => {
+  // Step 1: Exchange Google's authorization code for tokens.
+  const { tokens } = await googleClient.getToken(code);
+
+  if (!tokens.id_token) {
+    throw new AppError("Google ID token was not received", 401);
+  }
+
+  // Step 2: Verify Google's ID token.
+  const ticket = await googleClient.verifyIdToken({
+    idToken: tokens.id_token,
+    audience: process.env.GOOGLE_CLIENT_ID,
+  });
+
+  // Step 3: Get Google user information.
+  const googleUser = ticket.getPayload();
+
+  if (!googleUser) {
+    throw new AppError("Unable to verify Google account", 401);
+  }
+
+  const googleAccountId = googleUser.sub;
+  const email = googleUser.email;
+  const emailVerified = googleUser.email_verified;
+
+  if (!googleAccountId) {
+    throw new AppError("Google account ID is missing", 401);
+  }
+
+  if (!email) {
+    throw new AppError("Google email is missing", 401);
+  }
+
+  if (!emailVerified) {
+    throw new AppError("Google email is not verified", 401);
+  }
+
+  // Step 4: Check whether this Google account is already connected.
+  const [existingOAuthAccount] = await db
+    .select({
+      oauthAccountId: oauthAccounts.id,
+      userId: oauthAccounts.userId,
+    })
+    .from(oauthAccounts)
+    .where(
+      and(
+        eq(oauthAccounts.provider, "google"),
+        eq(oauthAccounts.providerAccountId, googleAccountId)
+      )
+    )
+    .limit(1);
+
+  let user;
+
+  // Step 5A: Existing Google account.
+  if (existingOAuthAccount) {
+    const [existingUser] = await db
+      .select({
+        id: users.id,
+        fullname: users.fullname,
+        email: users.email,
+        profileurl: users.profileurl,
+        isonboarded: users.isonboarded,
+        createdAt: users.createdAt,
+      })
+      .from(users)
+      .where(eq(users.id, existingOAuthAccount.userId))
+      .limit(1);
+
+    if (!existingUser) {
+      throw new AppError("Connected Yapply user was not found", 404);
+    }
+
+    user = existingUser;
+  } else {
+    // Step 5B: Google account is not connected yet.
+    const [existingEmailUser] = await db
+      .select({
+        id: users.id,
+      })
+      .from(users)
+      .where(eq(users.email, email))
+      .limit(1);
+
+    if (existingEmailUser) {
+      throw new AppError(
+        "An account with this email already exists. Login with your password first, then connect Google from account settings.",
+        409
+      );
+    }
+
+    // Generate a random avatar.
+    // This avatar will be used if Google does not provide a profile picture.
+    const idx = Math.floor(Math.random() * 100) + 1;
+    const randomAvatar = `https://avatarapi.runflare.run/public/${idx}.png`;
+
+    // Create the user and OAuth account inside one transaction.
+    // If either insert fails, both operations are rolled back.
+    user = await db.transaction(async (tx) => {
+      // Step 5B-1: Create the new Yapply user.
+      const [createdUser] = await tx
+        .insert(users)
+        .values({
+          fullname: googleUser.name ?? email.split("@")[0],
+          email,
+
+          // Use Google's picture if available.
+          // Otherwise, use the generated random avatar.
+          profileurl: googleUser.picture ?? randomAvatar,
+
+          // Google users do not have a Yapply password.
+          passwordHash: null,
+
+          isonboarded: false,
+        })
+        .returning({
+          id: users.id,
+          fullname: users.fullname,
+          email: users.email,
+          profileurl: users.profileurl,
+          isonboarded: users.isonboarded,
+          createdAt: users.createdAt,
+        });
+
+      if (!createdUser) {
+        throw new AppError("Unable to create Yapply user", 500);
+      }
+
+      // Step 5B-2: Connect the Google account to the new Yapply user.
+      await tx.insert(oauthAccounts).values({
+        userId: createdUser.id,
+        provider: "google",
+        providerAccountId: googleAccountId,
+      });
+
+      // Return the newly created user from the transaction.
+      return createdUser;
+    });
+  }
+
+  // Step 6: Generate Yapply JWT.
+  const token = await generateToken({
+    id: user.id,
+    fullname: user.fullname,
+    email: user.email,
+  });
+
+  return {
+    user,
+    token,
+  };
+};
+
 
 export const logoutUser=async() => {
   return {
