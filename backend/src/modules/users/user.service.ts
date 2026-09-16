@@ -1,10 +1,8 @@
 import { users } from "../../db/schema/users.schema.js"
 import { db } from "../../db/connection.js"
-import { eq ,ne, notInArray,inArray} from "drizzle-orm"
-import { OnboardingData } from "./user.validation.js"
+import { eq, ne, notInArray, inArray, and } from "drizzle-orm"
+import type { OnboardingData } from "./user.validation.js"
 import { upsertStreamUser } from "../../utils/stream.js"
-import { and ,or} from "drizzle-orm"
-import { friendRequests } from "../../db/schema/friend-request.schema.js"
 
 
 export const completeOnboarding=async (userId:string,onboarddata:OnboardingData) => {
@@ -126,58 +124,3 @@ export const allfriends=async (currentUserId:string) => {
     return friends;
 }
 
-export const sendFriendRequetsService=async (senderId:string,recipientId:string) => {
-
-  if(senderId===recipientId){
-    throw new Error(
-      "You can't send a friend request to yourself"
-    );
-  }
-
-  const [recipient]=await db.select({
-    id:users.id,
-    friends:users.friends,
-  }).from(users)
-  .where(eq(users.id,recipientId))
-  .limit(1);
-
-  if(!recipient){
-    throw new Error("Recipient not found");
-  }
-
-  if (recipient.friends?.includes(senderId)) {
-    throw new Error(
-      "You are already friends with this user"
-    );
-  }
-
-  const [existingRequest]=await db.select().from(friendRequests).where(
-    or(
-      and(
-        eq(friendRequests.senderId,senderId),
-        eq(friendRequests.recipientId,recipientId),
-      ),
-      and(
-        eq(friendRequests.senderId,recipientId),
-        eq(friendRequests.recipientId,senderId),
-      )
-    )
-  ).limit(1);
-
-  if (existingRequest) {
-    throw new Error(
-      "A friend request already exists between you and this user"
-    );
-  }
-
-  const [friendRequest] = await db
-  .insert(friendRequests)
-  .values({
-    senderId,
-    recipientId,
-    status: "pending",
-  })
-  .returning();
-
-return friendRequest;
-}

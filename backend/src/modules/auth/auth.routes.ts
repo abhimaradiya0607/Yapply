@@ -2,7 +2,6 @@ import  express  from "express";
 import { googlelogin, login, logout, register } from "./auth.controller.js";
 import { googleCallbackSchema, loginSchema, registerSchema } from "./auth.validation.js";
 import { validateBody } from "../../middlewares/validate.middleware.js";
-import { protectRoute } from "../../middlewares/auth.protectroute.js";
 
 
 const router=express.Router();

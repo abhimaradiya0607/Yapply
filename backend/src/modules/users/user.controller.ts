@@ -1,7 +1,7 @@
 import type { Request, Response } from "express";
 
 
-import {allfriends, allrecommendedUser, completeOnboarding, sendFriendRequetsService,} from './user.service.js';
+import {allfriends, allrecommendedUser, completeOnboarding,} from './user.service.js';
 
 
 export const onboard = async (req: Request,res: Response) => {
@@ -56,28 +56,4 @@ export const getMyfriends=async (req:Request,res:Response) => {
 
         return res.status(500).json({success: false,message: "Internal server error"});
     }
-}
-
-type SendFriendRequestParams = {
-  recipientId: string;
-};
-
-export const sentFriendRequest=async (req:Request<SendFriendRequestParams>,res:Response) => {
-  try {
-    const senderId=req.user?.id;
-
-    if(!senderId){
-      throw new Error('Un-authorized accesss plz authorized');
-    }
-
-    const {recipientId}=req.params;
-
-    const friendRequest=await sendFriendRequetsService(senderId,recipientId);
-
-    return res.status(201).json({success: true,message: "Friend request sent successfully",data: friendRequest,});
-  } catch (error) {
-    console.error("Error in sendFriendRequest controller:", error);
-
-    return res.status(500).json({success: false,message: "Internal Server Error",})
-  }
 }
