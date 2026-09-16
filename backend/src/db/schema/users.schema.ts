@@ -1,4 +1,6 @@
 import {pgTable,uuid,varchar,text,timestamp,boolean,integer} from 'drizzle-orm/pg-core'
+import { relations } from 'drizzle-orm';
+import { friendRequests } from './friend-request.schema.js';
 
 
 export const users=pgTable('users',{
@@ -16,3 +18,15 @@ export const users=pgTable('users',{
     createdAt: timestamp("created_at", {withTimezone: true,}).defaultNow().notNull(),
     updatedAt: timestamp("updated_at", {withTimezone: true,}).defaultNow().notNull(),
     });
+
+export const usersRealtions=relations(
+    users,
+    ({many})=>({
+        sentFriendRequets:many(friendRequests,{
+            relationName:"sentFriendRequests",
+        }),
+        receivedFriendRequest:many(friendRequests,{
+            relationName:"receivedFriendRequests",
+        }),
+    })
+);
