@@ -295,6 +295,17 @@ export const loginWithGoogle = async (code: string) => {
     });
   }
 
+  try {
+    await upsertStreamUser({
+      id: user.id.toString(),
+      name: user.fullname,
+      image: user.profileurl ?? "",
+    });
+  } catch (error) {
+    console.error("Stream user creation failed:", error);
+    throw new Error("Error creating stream user ");
+  }
+
   // Step 6: Generate Yapply JWT.
   const token = await generateToken({
     id: user.id,

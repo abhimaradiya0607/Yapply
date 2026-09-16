@@ -21,7 +21,7 @@ export const registerSchema = z.object({
   
     email: z.email("Invalid email address"),
   
-    password: z.string().min(6, "Password must contain at least 8 characters")
+    password: z.string().min(8, "Password must contain at least 8 characters")
       .max(72, "Password cannot exceed 72 characters"),
   });
   
@@ -30,18 +30,15 @@ export type RegisterInput = z.infer<typeof registerSchema>;
 
 export const loginSchema=z.object({
   email: z.email("Invalid email address"),
-  password: z.string().min(6, "Password must contain at least 8 characters")
+  password: z.string().min(8, "Password must contain at least 8 characters")
   .max(72, "Password cannot exceed 72 characters"),
 })
 
 export type loginInput=z.infer<typeof loginSchema>;
 
+
 export const googleCallbackSchema = z.object({
-  code: z
-    .string()
-    .min(1, "Google authorization code is required"),
+  code: z.string().min(1, "Google authorization code is required"),
 });
 
-export type GoogleCallbackInput = z.infer<
-  typeof googleCallbackSchema
->;
+export type GoogleCallbackInput = z.infer<typeof googleCallbackSchema>;

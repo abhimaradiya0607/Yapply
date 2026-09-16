@@ -1,5 +1,6 @@
 import type { Request, Response } from "express";
 import { loginUser, loginWithGoogle, logoutUser, registerUser } from "./auth.service.js";
+import { AppError } from "../../utils/app-error.js";
 
 
 export const register = async (req: Request, res: Response) => {
@@ -69,6 +70,16 @@ export const login=async (req:Request,res:Response) => {
       });
     }
 
+    if (
+      error instanceof Error &&
+      error.message.includes("Continue with Google")
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: error.message,
+      });
+    }
+
     return res.status(500).json({
       success: false,
       message:
@@ -111,15 +122,22 @@ export const googlelogin=async (req:Request,res:Response) => {
   } catch (error) {
     console.error("Google login error:", error);
 
-    return res.status(500).json({
+    if (error instanceof AppError) {
+      return res.status(error.statusCode).json({
+        success: false,
+        message: error.message,
+      });
+    }
+
+    return res.status(401).json({
       success: false,
       message: "Google login failed",
-});
+    });
   }
 };
 
 
-export const logout=async (req:Request,res:Response) => {
+export const logout=async (_req:Request,res:Response) => {
 
   const result=await logoutUser();
 
