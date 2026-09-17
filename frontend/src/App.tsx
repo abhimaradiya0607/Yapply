@@ -1,5 +1,9 @@
-import { Route, Routes } from "react-router";
+import { Navigate, Route, Routes } from "react-router-dom";
+import { Toaster } from "react-hot-toast";
+import { useQuery } from "@tanstack/react-query";
+
 import "./App.css";
+
 import HomePage from "./pages/HomePage";
 import SignUpPage from "./pages/SignUpPage";
 import LoginPage from "./pages/LoginPage";
@@ -7,23 +11,35 @@ import NotificationsPage from "./pages/NotificationsPage";
 import OnboardingPage from "./pages/OnboardingPage";
 import CallPage from "./pages/CallPage";
 import ChatPage from "./pages/ChatPage";
-import toast, { Toaster } from "react-hot-toast";
 
+import { axiosInstance } from "./lib/axios";
 
 function App() {
-   return (
-  <>
-  <Routes>
-    <Route path="/" element={<HomePage/>}/>
-    <Route path="/signup" element={<SignUpPage/>}/>
-    <Route path="/login" element={<LoginPage/>}/>
-    <Route path="/onboarding" element={<OnboardingPage/>}/>
-    <Route path="/notifications" element={<NotificationsPage/>}/>
-    <Route path="/call" element={<CallPage/>}/>
-    <Route path="/chat" element={<ChatPage/>}/>
-  </Routes>
-  <Toaster/> 
-  </>
+  const {data:authData,isLoading,isError,error,} = useQuery({
+    queryKey: ["authUser"],
+    queryFn: async () => {
+      const response = await axiosInstance.get("/users/me");
+      return response.data;
+    },
+    retry: false,
+  });
+
+  const authUser=authData?.user;
+
+  return (
+    <>
+      <Routes>
+        <Route path="/" element={authUser?<HomePage />:<Navigate to='/login'/>}/>
+        <Route path="/signup" element={!authUser?<SignUpPage />:<Navigate to='/'/>} />
+        <Route path="/login" element={!authUser?<LoginPage />:<Navigate to='/'/>} />
+        <Route path="/onboarding" element={authUser?<OnboardingPage />:<Navigate to='/login'/>} />
+        <Route path="/notifications" element={authUser?<NotificationsPage />:<Navigate to='/login'/>} />
+        <Route path="/call" element={authUser?<CallPage/>:<Navigate to='/login'/>}/>
+        <Route path="/chat" element={authUser?<ChatPage />:<Navigate to='/login'/>} />
+      </Routes>
+
+      <Toaster />
+    </>
   );
 }
 
