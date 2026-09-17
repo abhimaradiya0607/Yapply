@@ -1,27 +1,44 @@
 @import "tailwindcss";
 
-@plugin "daisyui" {
-  themes: all;
+@theme {
+  --font-sans: "Manrope", ui-sans-serif, system-ui, sans-serif;
+
+  --color-page: #f7f7f4;
+  --color-surface: #ffffff;
+  --color-field: #fafaf8;
+  --color-showcase: #e2ede1;
+  --color-soft: #e0ebe2;
+
+  --color-foreground: #121814;
+  --color-muted: #6d746e;
+  --color-subtle: #737a73;
+
+  --color-border: #dfe2dd;
+
+  --color-brand: #2d644e;
+  --color-brand-hover: #1f533f;
+  --color-brand-soft: #dce9df;
+
+  --color-error: #b42318;
+  --color-success: #2d644e;
 }
 
 @layer base {
   html {
     scroll-behavior: smooth;
+    font-family: var(--font-sans);
+    font-synthesis: none;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
   }
 
   body {
     min-width: 320px;
     min-height: 100vh;
     margin: 0;
-
-    font-family:
-      Inter,
-      ui-sans-serif,
-      system-ui,
-      -apple-system,
-      BlinkMacSystemFont,
-      "Segoe UI",
-      sans-serif;
+    background: var(--color-page);
+    color: var(--color-foreground);
+    font-family: inherit;
   }
 
   button,
@@ -30,6 +47,7 @@
   textarea,
   select {
     -webkit-tap-highlight-color: transparent;
+    font: inherit;
   }
 
   button,
