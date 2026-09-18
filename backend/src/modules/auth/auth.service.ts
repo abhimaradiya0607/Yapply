@@ -20,11 +20,12 @@ export const registerUser = async (data: RegisterInput) => {
     .where(eq(users.email, data.email))
     .limit(1);
 
-  if (existingUser) {
-    throw new Error(
-      "Email is already registered. Please use a different email."
-    );
-  }
+    if (existingUser) {
+      throw new AppError(
+        "Email is already registered. Please use a different email.",
+        409
+      );
+    }
 
   const passwordHash = await hashPassword(data.password);
 
@@ -45,8 +46,12 @@ export const registerUser = async (data: RegisterInput) => {
   });
 
   if (!createdUser) {
-    throw new Error("User registration failed");
+    throw new AppError(
+      "User registration failed",
+      500
+    );
   }
+
 
   const profileurl = generateAvatarUrl(createdUser.id);
 
@@ -66,10 +71,12 @@ export const registerUser = async (data: RegisterInput) => {
     createdAt: users.createdAt,
   });
 
-if (!user) {
-  throw new Error("Unable to save user avatar");
-}
-
+  if (!user) {
+    throw new AppError(
+      "Unable to save user avatar",
+      500
+    );
+  }
   try {
     await upsertStreamUser({
       id:user.id.toString(),
@@ -80,7 +87,10 @@ if (!user) {
   } catch (error) {
     console.error("Stream user creation failed:", error);
 
-    throw new Error("Error creating stream user ");
+    throw new AppError(
+      "Error creating Stream user",
+      500
+    );
   }
 
   const token = await generateToken({
