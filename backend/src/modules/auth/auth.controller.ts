@@ -20,24 +20,16 @@ export const register = async (req: Request, res: Response) => {
       user,
     });
   } catch (error) {
-    if (
-      error instanceof Error &&
-      error.message.includes("already registered")
-    ) {
-      return res.status(409).json({
+    if (error instanceof AppError) {
+      return res.status(error.statusCode).json({
         success: false,
         message: error.message,
       });
     }
-
+    console.error("Registration error:", error);
     return res.status(500).json({
       success: false,
-      message:
-        process.env.NODE_ENV === "development"
-          ? error instanceof Error
-            ? error.message
-            : String(error)
-          : "Something went wrong during registration",
+      message: "Something went wrong during registration",
     });
   }
 };
