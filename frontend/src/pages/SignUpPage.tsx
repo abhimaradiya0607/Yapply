@@ -1,6 +1,29 @@
 import { useState, type FormEvent } from 'react'
-import { Languages } from 'lucide-react'
+import { CircleAlert, Languages } from 'lucide-react'
 import { Link } from 'react-router-dom'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { signUp ,type BackendErrorResponse} from '../lib/api'
+import axios from "axios";
+import PageLoader from '../components/PageLoader'
+
+const getErrorMessage = (error: unknown): string => {
+  if (axios.isAxiosError<BackendErrorResponse>(error)) {
+    const responseData = error.response?.data;
+
+    if (responseData?.errors?.length) {
+      return responseData.errors
+        .map((issue) => issue.message)
+        .join(", ");
+    }
+
+    return (
+      responseData?.message ??
+      "Something went wrong. Please try again."
+    );
+  }
+
+  return "Something went wrong. Please try again.";
+};
 
 const SignUpPage = () => {
   const [signupData, setSignupData] = useState({
@@ -9,9 +32,23 @@ const SignUpPage = () => {
     password: '',
   })
 
-  const handleSignUp = (e) => {
-    e.preventDefault()
+  const queryClient=useQueryClient();
+  
+  const {mutate:signupmutation,isPending,error}=useMutation({
+    mutationFn:signUp,
+    onSuccess:()=>queryClient.invalidateQueries({queryKey:["authUser"]}),
+    onError: (mutationError) => {
+      console.error("Signup mutation failed:", mutationError);
+    },
+  })
+
+  const signupErrorMessage = error ? getErrorMessage(error) : null;
+
+  const handleSignUp = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    signupmutation(signupData);
   }
+
 
   return (
     <main className="min-h-screen bg-page px-4 py-6 font-sans text-foreground sm:px-6 sm:py-8 lg:flex lg:items-center lg:justify-center">
@@ -28,6 +65,29 @@ const SignUpPage = () => {
 
           <div className="w-full max-w-md">
             <form onSubmit={handleSignUp}>
+               {/* ERROR BLOCK — ABOVE THE FORM HEADING */}
+               {Boolean(error) && (
+              <div
+                role="alert"
+                className="mb-6 flex items-start gap-3 rounded-[10px] border border-rose-200 bg-rose-50 px-4 py-3.5 text-rose-800 shadow-sm"
+              >
+                <CircleAlert
+                  className="mt-0.5 size-5 shrink-0 text-rose-600"
+                  aria-hidden="true"
+                />
+
+                <div className="min-w-0">
+                  <p className="text-[14px] font-semibold leading-5">
+                    Unable to create account
+                  </p>
+
+                  <p className="mt-1 break-words text-[13px] leading-5 text-rose-700">
+                    {signupErrorMessage}
+                  </p>
+                </div>
+              </div>
+            )}
+
               <div className="space-y-7">
                 <div className="space-y-2">
                   <h1 className="text-[30px] font-semibold leading-[1.25] tracking-[-0.6px] sm:text-[34px]">
@@ -136,12 +196,26 @@ const SignUpPage = () => {
                     </span>
                   </label>
                 </div>
-
-                <button
+                    {/* {error &&(
+                      <div className='alert alert-error mb-4'>
+                        <span>{error.response.data.message}</span>
+                      </div>
+                    )} */}
+                <button 
                   className="h-12 w-full rounded-[10px] bg-brand px-4 text-[15px] font-semibold text-white transition-colors duration-150 hover:bg-brand-hover focus:outline-none focus:ring-4 focus:ring-brand/15"
                   type="submit"
+                  disabled={isPending}
                 >
-                  Create account
+                  {isPending ? (
+                    <>
+                      <span className="loading loading-spinner loading-sm"
+                        aria-hidden="true"
+                          />
+                      <span>Creating account...</span>
+                    </>
+                  ) : (
+                    "Create Account"
+                  )}
                 </button>
 
                 <p className="text-center text-[14px] leading-5 text-muted">
@@ -164,7 +238,7 @@ const SignUpPage = () => {
             {/* Illustration */}
             <div className="relative mx-auto aspect-square max-w-sm">
               <img
-                src="/i.png"
+                src="/r.png"
                 alt="Language connection illustration"
                 className="h-full w-full object-contain"
               />
