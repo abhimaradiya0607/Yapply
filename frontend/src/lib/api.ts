@@ -67,6 +67,11 @@ export const login = async (loginData: LoginData): Promise<AuthResponse> => {
   return response.data
 }
 
+export const logout = async (): Promise<{ success: boolean; message: string }> => {
+  const response = await axiosInstance.post('/auth/logout')
+  return response.data
+}
+
 export const getAuthUser = async (): Promise<AuthResponse> => {
   const response = await axiosInstance.get<AuthResponse>('/auth/me')
   return response.data
