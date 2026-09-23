@@ -11,6 +11,8 @@ import ChatPage from "./pages/ChatPage";
 import useAuthUser from "./hooks/useAuthUser";
 import PageLoader from "./components/PageLoader";
 import GoogleCallbackPage from "./pages/GoogleCallbackPage";
+import Layout from "./components/Layout";
+import ThemeManager from "./components/ThemeManager";
 
 function App() {
 
@@ -25,9 +27,12 @@ function App() {
 
   return (
     <>
+      <ThemeManager />
       <Routes>
         <Route path="/"  element={isAuthenticated && isOnboarded?(
-          <HomePage/>
+          <Layout showSideBar={true}>
+              <HomePage/>
+          </Layout>
         ):(
           <Navigate to={!isAuthenticated?'/login':'onboarding'}/>
         )}

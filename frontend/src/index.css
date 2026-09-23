@@ -1,4 +1,75 @@
 @import "tailwindcss";
+@plugin "daisyui" {
+  themes:
+    light,
+    dark,
+    cupcake,
+    bumblebee,
+    emerald,
+    corporate,
+    synthwave,
+    retro,
+    cyberpunk,
+    valentine,
+    halloween,
+    garden,
+    forest,
+    aqua,
+    lofi,
+    pastel,
+    fantasy,
+    wireframe,
+    black,
+    luxury,
+    dracula,
+    cmyk,
+    autumn,
+    business,
+    acid,
+    lemonade,
+    night,
+    coffee,
+    winter,
+    dim,
+    nord,
+    sunset;
+  logs: false;
+}
+@plugin "daisyui/theme" {
+  name: "yapply";
+  default: true;
+  prefersdark: false;
+  color-scheme: dark;
+
+  --color-base-100: #0d0f10;
+  --color-base-200: #161a1d;
+  --color-base-300: #2a2d32;
+  --color-base-content: #f3f4f6;
+  --color-primary: #c7f000;
+  --color-primary-content: #0d0f10;
+  --color-secondary: #a1a1aa;
+  --color-secondary-content: #0d0f10;
+  --color-accent: #34d399;
+  --color-accent-content: #0d0f10;
+  --color-neutral: #2a2d32;
+  --color-neutral-content: #f3f4f6;
+  --color-info: #38bdf8;
+  --color-info-content: #0d0f10;
+  --color-success: #34d399;
+  --color-success-content: #0d0f10;
+  --color-warning: #fbbf24;
+  --color-warning-content: #0d0f10;
+  --color-error: #fb7185;
+  --color-error-content: #0d0f10;
+  --radius-selector: 0.5rem;
+  --radius-field: 0.5rem;
+  --radius-box: 0.75rem;
+  --size-selector: 0.25rem;
+  --size-field: 0.25rem;
+  --border: 1px;
+  --depth: 0;
+  --noise: 0;
+}
 
 @theme {
   --font-sans: "Manrope", ui-sans-serif, system-ui, sans-serif;
@@ -54,4 +125,33 @@
   a {
     cursor: pointer;
   }
+}
+
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 350ms;
+  animation-timing-function: ease-in-out;
+}
+
+::view-transition-old(root) {
+  animation: none;
+}
+
+::view-transition-new(root) {
+  animation-name: theme-reveal;
+}
+
+@keyframes theme-reveal {
+  from {
+    clip-path: circle(0 at var(--theme-x, 50%) var(--theme-y, 0));
+  }
+
+  to {
+    clip-path: circle(150vmax at var(--theme-x, 50%) var(--theme-y, 0));
+  }
+}
+
+.theme-menu {
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in srgb, currentColor 28%, transparent) transparent;
 }
