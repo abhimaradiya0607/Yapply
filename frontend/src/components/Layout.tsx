@@ -14,30 +14,7 @@ const Layout = ({ children, showSideBar = false }: LayoutProps) => {
   const closeDrawer = () => setIsDrawerOpen(false);
 
   return (
-    <div className="min-h-screen bg-base-100 text-base-content">
-      {/* Mobile top bar (only below md) */}
-      {showSideBar && (
-        <header className="flex items-center justify-between border-b border-base-content/10 bg-base-100 px-4 py-3 md:hidden">
-          <div className="flex items-center gap-2">
-            <Zap
-              className="size-5 text-primary"
-              strokeWidth={2}
-              aria-hidden="true"
-            />
-            <span className="text-lg font-semibold text-base-content">Yapply</span>
-          </div>
-
-          <button
-            type="button"
-            onClick={() => setIsDrawerOpen(true)}
-            aria-label="Open navigation"
-            className="rounded-lg p-2 text-base-content transition-colors hover:bg-base-content/10"
-          >
-            <Menu className="size-6" aria-hidden="true" />
-          </button>
-        </header>
-      )}
-
+    <div className="flex h-dvh overflow-hidden bg-base-100 text-base-content">
       {/* Mobile drawer + overlay (only below md) */}
       {showSideBar && (
         <div
@@ -74,15 +51,38 @@ const Layout = ({ children, showSideBar = false }: LayoutProps) => {
         </div>
       )}
 
-      {/* App shell */}
-      <div className="flex min-h-screen">
-        {showSideBar && <Sidebar />}
+      {showSideBar && <Sidebar />}
 
-        <div className="flex min-w-0 flex-1 flex-col">
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+        {showSideBar && (
+          <header className="flex shrink-0 items-center justify-between border-b border-base-content/10 bg-base-100 px-4 py-3 md:hidden">
+            <div className="flex items-center gap-2">
+              <Zap
+                className="size-5 text-primary"
+                strokeWidth={2}
+                aria-hidden="true"
+              />
+              <span className="text-lg font-semibold text-base-content">
+                Yapply
+              </span>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setIsDrawerOpen(true)}
+              aria-label="Open navigation"
+              className="rounded-lg p-2 text-base-content transition-colors hover:bg-base-content/10"
+            >
+              <Menu className="size-6" aria-hidden="true" />
+            </button>
+          </header>
+        )}
+
+        <div className="sticky top-0 z-30 shrink-0">
           <Navbar />
-
-          <main className="min-w-0 flex-1 overflow-y-auto">{children}</main>
         </div>
+
+        <div className="min-h-0 flex-1 overflow-y-auto">{children}</div>
       </div>
     </div>
   );

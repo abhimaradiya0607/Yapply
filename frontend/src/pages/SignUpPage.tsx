@@ -4,7 +4,6 @@ import { Link } from 'react-router-dom'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { signUp ,type BackendErrorResponse} from '../lib/api'
 import axios from "axios";
-import PageLoader from '../components/PageLoader'
 
 const getErrorMessage = (error: unknown): string => {
   if (axios.isAxiosError<BackendErrorResponse>(error)) {

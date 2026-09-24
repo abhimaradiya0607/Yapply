@@ -8,6 +8,7 @@ import NotificationsPage from "./pages/NotificationsPage";
 import OnboardingPage from "./pages/OnboardingPage";
 import CallPage from "./pages/CallPage";
 import ChatPage from "./pages/ChatPage";
+import FriendsPage from "./pages/FriendsPage";
 import useAuthUser from "./hooks/useAuthUser";
 import PageLoader from "./components/PageLoader";
 import GoogleCallbackPage from "./pages/GoogleCallbackPage";
@@ -40,19 +41,21 @@ function App() {
         <Route
           path="/signup"
           element={
-            isLoading ? (<div>Loading...</div>) : !isAuthenticated ? (
+            !isAuthenticated ? (
               <SignUpPage />
-            ) :<Navigate to={isOnboarded?'/':'/onboarding'}/>
+            ) : (
+              <Navigate to={isOnboarded ? "/" : "/onboarding"} />
+            )
           }
         />
         <Route
           path="/login"
           element={
-            isLoading ? (
-              <div>Loading...</div>
-            ) : !isAuthenticated ? (
+            !isAuthenticated ? (
               <LoginPage />
-            ) : <Navigate to={isOnboarded?'/':'/onboarding'}/>
+            ) : (
+              <Navigate to={isOnboarded ? "/" : "/onboarding"} />
+            )
           }
         />
         <Route
@@ -72,38 +75,44 @@ function App() {
           )}
         />
         <Route
+          path="/friends"
+          element={
+            isAuthenticated && isOnboarded ? (
+              <Layout showSideBar={true}>
+                <FriendsPage />
+              </Layout>
+            ) : (
+              <Navigate to={!isAuthenticated ? "/login" : "/onboarding"} replace />
+            )
+          }
+        />
+        <Route
           path="/notifications"
           element={
-            isLoading ? (
-              <div>Loading...</div>
-            ) : isAuthenticated ? (
-              <NotificationsPage />
+            isAuthenticated && isOnboarded ? (
+              <Layout showSideBar={true}>
+                        <NotificationsPage />
+              </Layout>
             ) : (
-              <Navigate to="/login" replace />
+              <Navigate to={!isAuthenticated?"/login":"/onboarding" } />
             )
           }
         />
         <Route
           path="/call"
           element={
-            isLoading ? (
-              <div>Loading...</div>
-            ) : isAuthenticated ? (
-              <CallPage />
-            ) : (
-              <Navigate to="/login" replace />
-            )
+            isAuthenticated ? <CallPage /> : <Navigate to="/login" replace />
           }
         />
         <Route
-          path="/chat"
+          path="/chat/:friendId?"
           element={
-            isLoading ? (
-              <div>Loading...</div>
-            ) : isAuthenticated ? (
-              <ChatPage />
-            ) : (
-              <Navigate to="/login" replace />
+            isAuthenticated&& isOnboarded ? (
+              <Layout showSideBar={false}>
+                <ChatPage/>
+              </Layout>
+            ):(
+              <Navigate to={!isAuthenticated?"/login":"/onboarding" } />
             )
           }
         />

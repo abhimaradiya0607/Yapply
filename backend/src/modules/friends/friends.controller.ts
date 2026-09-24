@@ -1,7 +1,7 @@
 import type { Request, Response } from "express";
 
 
-import {acceptFriendRequestService, getFriendRequestService, getOutgoingFriendRequestsService, sendFriendRequetsService,} from './friends.service.js';
+import {acceptFriendRequestService, getFriendRequestService, getOutgoingFriendRequestsService, rejectFriendRequestService, sendFriendRequetsService,} from './friends.service.js';
 
 
 type SendFriendRequestParams = {
@@ -121,6 +121,49 @@ type SendFriendRequestParams = {
       });
     }
   }
+
+export async function rejectFriendRequest(
+  req: Request<AcceptFriendRequestParams>,
+  res: Response,
+) {
+  try {
+    const currentUserId = req.user!.id;
+    const { id: requestId } = req.params;
+
+    const friendRequest = await rejectFriendRequestService(
+      requestId,
+      currentUserId,
+    );
+
+    return res.status(200).json({
+      success: true,
+      message: "Friend request rejected successfully",
+      data: friendRequest,
+    });
+  } catch (error) {
+    console.error("Error in rejectFriendRequest controller:", error);
+
+    const message =
+      error instanceof Error ? error.message : "Internal Server Error";
+
+    if (message === "Friend request not found") {
+      return res.status(404).json({ success: false, message });
+    }
+
+    if (message === "You are not authorized to reject this request") {
+      return res.status(403).json({ success: false, message });
+    }
+
+    if (message === "This friend request is no longer pending") {
+      return res.status(400).json({ success: false, message });
+    }
+
+    return res.status(500).json({
+      success: false,
+      message: "Internal Server Error",
+    });
+  }
+}
 
   export async function getFriendRequests(req: Request,res: Response) {
     try {

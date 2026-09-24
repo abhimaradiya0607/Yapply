@@ -137,6 +137,39 @@ export const acceptFriendRequestService=async (requestId:string,currentUserId:st
     return result;
 }
 
+export const rejectFriendRequestService = async (
+  requestId: string,
+  currentUserId: string,
+) => {
+  const [friendRequest] = await db
+    .select()
+    .from(friendRequests)
+    .where(eq(friendRequests.id, requestId));
+
+  if (!friendRequest) {
+    throw new Error("Friend request not found");
+  }
+
+  if (friendRequest.recipientId !== currentUserId) {
+    throw new Error("You are not authorized to reject this request");
+  }
+
+  if (friendRequest.status !== "pending") {
+    throw new Error("This friend request is no longer pending");
+  }
+
+  const [updatedRequest] = await db
+    .update(friendRequests)
+    .set({
+      status: "rejected",
+      updatedAt: new Date(),
+    })
+    .where(eq(friendRequests.id, requestId))
+    .returning();
+
+  return updatedRequest;
+};
+
 export const getFriendRequestService = async (
     currentUserId: string
   ) => {
@@ -153,6 +186,8 @@ export const getFriendRequestService = async (
           id: users.id,
           fullname: users.fullname,
           profileurl: users.profileurl,
+          location: users.location,
+          bio: users.bio,
           nativeLanguage: users.nativelanguage,
           learningLanguage: users.learninglanguage,
         },
