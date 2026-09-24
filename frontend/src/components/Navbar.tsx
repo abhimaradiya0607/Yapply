@@ -1,11 +1,12 @@
 import { useState } from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import toast from "react-hot-toast";
-import { Bell, Languages, LogOut, Search } from "lucide-react";
+import { Languages, LogOut, Search } from "lucide-react";
 
 import useAuthUser from "../hooks/useAuthUser";
 import { logout } from "../lib/api";
+import NotificationBell from "./notifications/NotificationBell";
 import ThemeSelector from "./ThemeSelector";
 
 const iconButton =
@@ -30,7 +31,8 @@ const Navbar = () => {
   const queryClient = useQueryClient();
   const { authUser } = useAuthUser();
 
-  const isChatPage = location.pathname === "/chat";
+  const isChatPage =
+    location.pathname === "/chat" || location.pathname.startsWith("/chat/");
 
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
@@ -100,10 +102,7 @@ const Navbar = () => {
       <div className="ml-auto flex items-center gap-2 sm:gap-3">
         <ThemeSelector />
 
-        {/* Notifications */}
-        <Link to="/notifications" aria-label="Notifications" className={iconButton}>
-          <Bell className="size-5" aria-hidden="true" />
-        </Link>
+        <NotificationBell className={iconButton} />
 
         {/* Profile + logout */}
         <div className="relative">

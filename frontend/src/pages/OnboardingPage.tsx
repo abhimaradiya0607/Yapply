@@ -1,10 +1,8 @@
 import { useState, type FormEvent } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import toast from "react-hot-toast";
-import { Link } from "react-router-dom";
 import {
   CircleAlert,
-  Globe2,
   Languages,
   LoaderIcon,
   MapPin,
@@ -50,10 +48,6 @@ const OnboardingPage = () => {
     location: authUser?.location || "",
     profileurl:authUser?.profileurl || "",
   });
-
-  // Preview-only avatar seed. Purely cosmetic — the onboarding request
-  // payload and avatar persistence logic are unchanged.
-  const [avatarSeed, setAvatarSeed] = useState(authUser?.id ?? "yapply");
 
   const { mutate: onboardingMutation, isPending, error } = useMutation({
     mutationFn: completeOnboarding,

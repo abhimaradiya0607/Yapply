@@ -59,7 +59,7 @@ const Sidebar = ({ variant = "responsive", onNavigate }: SidebarProps) => {
       className={
         isFull
           ? "flex h-full w-full flex-col bg-base-100 text-base-content"
-          : "hidden h-screen w-20 shrink-0 flex-col border-r border-base-content/10 bg-base-100 text-base-content md:flex lg:w-[260px]"
+          : "sticky top-0 hidden h-dvh w-20 shrink-0 flex-col border-r border-base-content/10 bg-base-100 text-base-content md:flex lg:w-[260px]"
       }
     >
       {/* Brand */}
