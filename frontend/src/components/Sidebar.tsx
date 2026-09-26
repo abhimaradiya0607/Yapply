@@ -1,7 +1,6 @@
 import { NavLink } from "react-router-dom";
 import {
   Bell,
-  Headphones,
   House,
   UsersRound,
   Zap,
@@ -25,7 +24,6 @@ const navigationItems: NavigationItem[] = [
   { label: "Home", href: "/", icon: House, end: true },
   { label: "Friends", href: "/friends", icon: UsersRound },
   { label: "Notifications", href: "/notifications", icon: Bell },
-  { label: "Voice Rooms", href: "/call", icon: Headphones, badge: "NEW" },
 ];
 
 const getInitials = (fullname?: string): string => {

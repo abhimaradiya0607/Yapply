@@ -4,6 +4,10 @@ import { users } from "../../db/schema/users.schema.js"
 import { db } from "../../db/connection.js"
 import { eq } from "drizzle-orm"
 import { and ,or} from "drizzle-orm"
+import {
+  createNotification,
+  markEntityNotificationRead,
+} from "../notifications/notification.service.js"
 
 export const sendFriendRequetsService=async (senderId:string,recipientId:string) => {
 
@@ -49,15 +53,26 @@ export const sendFriendRequetsService=async (senderId:string,recipientId:string)
       );
     }
   
-    const [friendRequest] = await db
-    .insert(friendRequests)
-    .values({
-      senderId,
-      recipientId,
-      status: "pending",
-    })
-    .returning();
-  
+    const friendRequest = await db.transaction(async (tx) => {
+      const [createdRequest] = await tx
+        .insert(friendRequests)
+        .values({
+          senderId,
+          recipientId,
+          status: "pending",
+        })
+        .returning();
+
+      await createNotification(tx, {
+        recipientId,
+        actorId: senderId,
+        type: "friend_request",
+        entityId: createdRequest.id,
+      });
+
+      return createdRequest;
+    });
+
   return friendRequest;
 }
   
@@ -131,7 +146,20 @@ export const acceptFriendRequestService=async (requestId:string,currentUserId:st
         `,
       })
       .where(eq(users.id, friendRequest.recipientId));
-  
+
+      await createNotification(tx, {
+        recipientId: friendRequest.senderId,
+        actorId: friendRequest.recipientId,
+        type: "friend_request_accepted",
+        entityId: friendRequest.id,
+      });
+
+      await markEntityNotificationRead(tx, {
+        recipientId: friendRequest.recipientId,
+        type: "friend_request",
+        entityId: friendRequest.id,
+      });
+
     return updatedRequest;
   });
     return result;
@@ -158,14 +186,24 @@ export const rejectFriendRequestService = async (
     throw new Error("This friend request is no longer pending");
   }
 
-  const [updatedRequest] = await db
-    .update(friendRequests)
-    .set({
-      status: "rejected",
-      updatedAt: new Date(),
-    })
-    .where(eq(friendRequests.id, requestId))
-    .returning();
+  const updatedRequest = await db.transaction(async (tx) => {
+    const [rejectedRequest] = await tx
+      .update(friendRequests)
+      .set({
+        status: "rejected",
+        updatedAt: new Date(),
+      })
+      .where(eq(friendRequests.id, requestId))
+      .returning();
+
+    await markEntityNotificationRead(tx, {
+      recipientId: currentUserId,
+      type: "friend_request",
+      entityId: requestId,
+    });
+
+    return rejectedRequest;
+  });
 
   return updatedRequest;
 };

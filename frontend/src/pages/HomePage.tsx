@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Bell, Inbox, Users, type LucideIcon } from "lucide-react";
+import toast from "react-hot-toast";
 
 import Avatar from "../components/Avatar";
 import DiscoverCard from "../components/discover/DiscoverCard";
@@ -11,11 +13,39 @@ import {
   getFriendRequests,
   getOutgoingFriendRequests,
   getRecommendedUsers,
+  getUnreadNotificationCount,
   getUserFriends,
+  notificationQueryKeys,
   rejectFriendRequest,
   sendFriendRequest,
   type IncomingFriendRequest,
 } from "../lib/api";
+
+const displayCount = (isLoading: boolean, isError: boolean, count: number) => {
+  if (isError) return "—";
+  if (isLoading) return "...";
+  return count;
+};
+
+const DashboardStat = ({
+  label,
+  value,
+  icon: Icon,
+}: {
+  label: string;
+  value: string | number;
+  icon: LucideIcon;
+}) => (
+  <div className="rounded-2xl border border-base-content/10 bg-base-100 px-4 py-3">
+    <div className="flex items-center gap-2 text-xs font-medium text-base-content/60">
+      <Icon className="size-3.5 shrink-0" aria-hidden="true" />
+      {label}
+    </div>
+    <p className="mt-1 text-2xl font-semibold tracking-tight text-base-content">
+      {value}
+    </p>
+  </div>
+);
 
 const RequestRow = ({
   request,
@@ -35,24 +65,24 @@ const RequestRow = ({
   const bio = sender.bio?.trim();
 
   return (
-    <article className="flex flex-col gap-4 rounded-2xl border border-white/[0.06] bg-[#111214] p-4 sm:flex-row sm:items-center">
+    <article className="flex flex-col gap-4 rounded-2xl border border-base-content/10 bg-base-100 p-4 sm:flex-row sm:items-center">
       <Avatar name={sender.fullname} src={sender.profileurl} />
 
       <div className="min-w-0 flex-1">
-        <h3 className="truncate text-base font-semibold text-[#f5f5f5]">
+        <h3 className="truncate text-base font-semibold text-base-content">
           {sender.fullname || "Learner"}
         </h3>
         {location && (
-          <p className="mt-1 truncate text-sm text-[#b8bac2]">{location}</p>
+          <p className="mt-1 truncate text-sm text-base-content/70">{location}</p>
         )}
         {(nativeLanguage || learningLanguage) && (
-          <p className="mt-1 text-sm text-[#b8bac2]">
+          <p className="mt-1 text-sm text-base-content/70">
             {nativeLanguage && <span>Native: {nativeLanguage}</span>}
             {nativeLanguage && learningLanguage && <span> · </span>}
             {learningLanguage && <span>Learning: {learningLanguage}</span>}
           </p>
         )}
-        {bio && <p className="mt-2 line-clamp-2 text-sm text-[#9a9ca6]">{bio}</p>}
+        {bio && <p className="mt-2 line-clamp-2 text-sm text-base-content/60">{bio}</p>}
       </div>
 
       <div className="flex shrink-0 gap-2">
@@ -60,7 +90,7 @@ const RequestRow = ({
           type="button"
           onClick={onAccept}
           disabled={busy}
-          className="rounded-xl bg-[#c7ff20] px-4 py-2 text-sm font-bold text-[#111214] transition hover:bg-[#d3ff4d] disabled:cursor-not-allowed disabled:opacity-50"
+          className="rounded-xl bg-primary px-4 py-2 text-sm font-bold text-primary-content transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-50"
         >
           Accept
         </button>
@@ -68,7 +98,7 @@ const RequestRow = ({
           type="button"
           onClick={onDecline}
           disabled={busy}
-          className="rounded-xl border border-white/10 px-4 py-2 text-sm font-semibold text-[#f5f5f5] transition hover:bg-white/5 disabled:cursor-not-allowed disabled:opacity-50"
+          className="rounded-xl border border-base-content/10 px-4 py-2 text-sm font-semibold text-base-content transition hover:bg-base-content/5 disabled:cursor-not-allowed disabled:opacity-50"
         >
           Decline
         </button>
@@ -92,7 +122,12 @@ const HomePage = () => {
     queryFn: getUserFriends,
   });
 
-  const { data: recommendedUsers = [], isLoading: loadingUsers } = useQuery({
+  const {
+    data: recommendedUsers = [],
+    isLoading: loadingUsers,
+    isError: usersError,
+    refetch: refetchUsers,
+  } = useQuery({
     queryKey: ["recommendedUsers"],
     queryFn: getRecommendedUsers,
   });
@@ -103,9 +138,27 @@ const HomePage = () => {
       queryFn: getOutgoingFriendRequests,
     });
 
-  const { data: friendRequests, isLoading: loadingRequests } = useQuery({
+  const {
+    data: friendRequests,
+    isLoading: loadingRequests,
+    isError: requestsError,
+    refetch: refetchRequests,
+  } = useQuery({
     queryKey: ["friendRequests"],
     queryFn: getFriendRequests,
+    refetchInterval: 30_000,
+    refetchIntervalInBackground: false,
+  });
+
+  const {
+    data: unreadCount = 0,
+    isLoading: loadingActivity,
+    isError: activityError,
+  } = useQuery({
+    queryKey: notificationQueryKeys.unreadCount,
+    queryFn: getUnreadNotificationCount,
+    refetchInterval: 30_000,
+    refetchIntervalInBackground: false,
   });
 
   const refreshFriendData = () => {
@@ -115,19 +168,48 @@ const HomePage = () => {
     void queryClient.invalidateQueries({ queryKey: ["outgoingFriendRequests"] });
   };
 
+  const refreshNotifications = () => {
+    void queryClient.invalidateQueries({
+      queryKey: notificationQueryKeys.list,
+    });
+    void queryClient.invalidateQueries({
+      queryKey: notificationQueryKeys.unreadCount,
+    });
+  };
+
   const acceptMutation = useMutation({
     mutationFn: acceptFriendRequest,
-    onSuccess: refreshFriendData,
+    onSuccess: () => {
+      refreshFriendData();
+      refreshNotifications();
+      toast.success("Friend request accepted.");
+    },
+    onError: () => {
+      toast.error("Couldn't accept friend request.");
+    },
   });
 
   const declineMutation = useMutation({
     mutationFn: rejectFriendRequest,
-    onSuccess: refreshFriendData,
+    onSuccess: () => {
+      refreshFriendData();
+      refreshNotifications();
+      toast.success("Friend request declined.");
+    },
+    onError: () => {
+      toast.error("Couldn't decline friend request.");
+    },
   });
 
   const sendMutation = useMutation({
     mutationFn: sendFriendRequest,
-    onSuccess: refreshFriendData,
+    onSuccess: () => {
+      refreshFriendData();
+      toast.success("Friend request sent.");
+    },
+    onError: () => {
+      toast.error("Couldn't send friend request.");
+    },
   });
 
   const incomingRequests = friendRequests?.incomingRequest ?? [];
@@ -181,49 +263,60 @@ const HomePage = () => {
     hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
 
   return (
-    <main className="min-h-screen bg-[#111214] px-4 py-6 text-[#f5f5f5] sm:px-6 lg:px-10">
+    <main className="min-h-screen bg-base-100 px-4 py-6 text-base-content sm:px-6 lg:px-10">
       <section className="mx-auto w-full max-w-7xl">
-        <div className="rounded-[28px] border border-white/[0.03] bg-[#1a1b1e] px-6 py-8 shadow-sm sm:px-10 sm:py-10 lg:px-12">
-          <div className="flex flex-col gap-8 lg:flex-row lg:items-center lg:justify-between">
+        <div className="rounded-[28px] border border-base-content/10 bg-base-200 px-6 py-8 shadow-sm sm:px-10 sm:py-10 lg:px-12">
+          <div className="flex flex-col gap-8 lg:grid lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center lg:gap-x-8">
             <div className="max-w-2xl">
-              <div className="mb-6 inline-flex items-center gap-3 rounded-full bg-[#222328] px-4 py-2 text-sm font-medium text-[#f4f4f5] sm:text-base">
-                <span className="h-3 w-3 rounded-full bg-[#c7ff20]" />
+              <div className="mb-6 inline-flex items-center gap-3 rounded-full bg-base-300 px-4 py-2 text-sm font-medium text-base-content sm:text-base">
+                <span className="h-3 w-3 rounded-full bg-primary" />
                 Daily Command Center
               </div>
 
-              <h1 className="text-4xl font-medium leading-[1.05] tracking-[-0.04em] text-[#f5f5f5] sm:text-5xl lg:text-6xl">
+              <h1 className="text-4xl font-medium leading-[1.05] tracking-[-0.04em] text-base-content sm:text-5xl xl:text-6xl">
                 {greeting},{" "}
                 <span className="font-semibold">
                   {isLoading ? "..." : `${firstName}.`}
                 </span>
                 <br />
-                <span className="font-semibold text-[#c7ff20]">
+                <span className="font-semibold text-primary">
                   Ready for today&apos;s exchange?
                 </span>
               </h1>
-
-              <p className="mt-6 max-w-xl text-lg leading-relaxed text-[#b8bac2] sm:text-xl">
-                You have{" "}
-                <span className="font-semibold text-[#f5f5f5]">
-                  2 incoming partner invites
-                </span>{" "}
-                and{" "}
-                <span className="font-semibold text-[#f5f5f5]">
-                  48 native Spanish speakers
-                </span>{" "}
-                active right now.
-              </p>
             </div>
 
-            <div className="flex shrink-0 flex-col gap-5 lg:items-end">
-              <div className="inline-flex w-fit items-center gap-3 rounded-2xl bg-[#232429] px-5 py-4 text-lg font-medium text-[#f5f5f5]">
-                <span className="text-2xl">🔥</span>
-                14-day streak
-              </div>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 lg:col-span-2">
+              <DashboardStat
+                label="Friends"
+                icon={Users}
+                value={displayCount(loadingFriends, friendsError, friends.length)}
+              />
+              <DashboardStat
+                label="Pending"
+                icon={Inbox}
+                value={displayCount(
+                  loadingRequests,
+                  requestsError,
+                  incomingRequests.length,
+                )}
+              />
+              <DashboardStat
+                label="Activity"
+                icon={Bell}
+                value={displayCount(loadingActivity, activityError, unreadCount)}
+              />
+            </div>
 
+            <div className="flex shrink-0 flex-col gap-5 lg:col-start-2 lg:row-start-1 lg:items-end">
               <button
                 type="button"
-                className="inline-flex w-full items-center justify-center gap-3 rounded-2xl bg-[#c7ff20] px-6 py-5 text-lg font-bold text-[#111214] transition hover:bg-[#d3ff4d] focus:outline-none focus:ring-2 focus:ring-[#c7ff20] focus:ring-offset-2 focus:ring-offset-[#1a1b1e] sm:w-auto"
+                onClick={() =>
+                  document.getElementById("discover-learners")?.scrollIntoView({
+                    behavior: "smooth",
+                    block: "start",
+                  })
+                }
+                className="inline-flex w-full items-center justify-center gap-3 rounded-2xl bg-primary px-6 py-5 text-lg font-bold text-primary-content transition hover:brightness-105 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-base-200 sm:w-auto"
               >
                 <svg
                   viewBox="0 0 24 24"
@@ -242,14 +335,18 @@ const HomePage = () => {
           </div>
         </div>
 
-        <section className="mt-6 rounded-[28px] border border-white/[0.06] bg-[#1a1b1e] p-6 sm:p-8">
+        <section className="mt-6 rounded-[28px] border border-base-content/10 bg-base-200 p-6 sm:p-8">
           <div className="flex items-center justify-between gap-4">
-            <div className="flex items-baseline gap-3">
-              <h2 className="text-xl font-semibold text-[#f5f5f5]">
+            <div className="flex items-center gap-3">
+              <h2 className="text-xl font-semibold text-base-content">
                 Pending Requests
               </h2>
-              <span className="text-sm font-medium text-[#b8bac2]">
-                {incomingRequests.length} Waiting
+              <span className="inline-flex h-6 min-w-6 items-center justify-center rounded-full bg-primary px-2 text-xs font-bold text-primary-content">
+                {displayCount(
+                  loadingRequests,
+                  requestsError,
+                  incomingRequests.length,
+                )}
               </span>
             </div>
 
@@ -257,7 +354,7 @@ const HomePage = () => {
               <button
                 type="button"
                 onClick={() => setIsRequestsOpen(true)}
-                className="text-sm font-semibold text-[#c7ff20] transition hover:text-[#d3ff4d]"
+                className="text-sm font-semibold text-primary transition hover:brightness-110"
               >
                 View all
               </button>
@@ -267,11 +364,27 @@ const HomePage = () => {
           <div className="mt-5 space-y-3">
             {loadingRequests ? (
               <>
-                <div className="h-24 animate-pulse rounded-2xl bg-[#111214]" />
-                <div className="h-24 animate-pulse rounded-2xl bg-[#111214]" />
+                <div className="h-24 animate-pulse rounded-2xl bg-base-100" />
+                <div className="h-24 animate-pulse rounded-2xl bg-base-100" />
               </>
+            ) : requestsError ? (
+              <div className="rounded-2xl border border-base-content/10 bg-base-100 px-4 py-8">
+                <h3 className="text-base font-semibold text-base-content">
+                  Couldn&apos;t load requests
+                </h3>
+                <p className="mt-1 text-sm text-base-content/70">
+                  Try again in a moment.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => void refetchRequests()}
+                  className="mt-4 rounded-xl border border-base-content/10 bg-base-300 px-4 py-2 text-sm font-semibold text-base-content transition hover:bg-base-content/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                >
+                  Retry
+                </button>
+              </div>
             ) : incomingRequests.length === 0 ? (
-              <p className="rounded-2xl border border-dashed border-white/10 px-4 py-8 text-center text-sm text-[#b8bac2]">
+              <p className="rounded-2xl border border-dashed border-base-content/10 px-4 py-8 text-center text-sm text-base-content/70">
                 No pending requests
               </p>
             ) : (
@@ -304,7 +417,7 @@ const HomePage = () => {
         />
 
         <section id="discover-learners" className="mt-6">
-          <h2 className="text-xl font-semibold text-[#f5f5f5]">
+          <h2 className="text-xl font-semibold text-base-content">
             Discover Learners
           </h2>
 
@@ -314,8 +427,24 @@ const HomePage = () => {
                 <FriendCardSkeleton key={index} />
               ))}
             </div>
+          ) : usersError ? (
+            <div className="mt-5 rounded-[28px] border border-base-content/10 bg-base-200 px-6 py-8">
+              <h3 className="text-base font-semibold text-base-content">
+                Couldn&apos;t load learners
+              </h3>
+              <p className="mt-1 text-sm text-base-content/70">
+                Try again in a moment.
+              </p>
+              <button
+                type="button"
+                onClick={() => void refetchUsers()}
+                className="mt-4 rounded-xl border border-base-content/10 bg-base-300 px-4 py-2 text-sm font-semibold text-base-content transition hover:bg-base-content/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+              >
+                Retry
+              </button>
+            </div>
           ) : discoverUsers.length === 0 ? (
-            <p className="mt-5 rounded-[28px] border border-dashed border-white/10 bg-[#1a1b1e] px-4 py-10 text-center text-sm text-[#b8bac2]">
+            <p className="mt-5 rounded-[28px] border border-dashed border-base-content/10 bg-base-200 px-4 py-10 text-center text-sm text-base-content/70">
               No learners to discover right now
             </p>
           ) : (
@@ -346,12 +475,12 @@ const HomePage = () => {
             role="dialog"
             aria-modal="true"
             aria-labelledby="pending-requests-title"
-            className="relative z-10 flex max-h-[min(720px,calc(100vh-2rem))] w-full max-w-2xl flex-col rounded-[28px] border border-white/10 bg-[#1a1b1e] p-6 shadow-xl"
+            className="relative z-10 flex max-h-[min(720px,calc(100vh-2rem))] w-full max-w-2xl flex-col rounded-[28px] border border-base-content/10 bg-base-200 p-6 shadow-xl"
           >
             <div className="flex items-center justify-between gap-4">
               <h2
                 id="pending-requests-title"
-                className="text-xl font-semibold text-[#f5f5f5]"
+                className="text-xl font-semibold text-base-content"
               >
                 Pending Requests
               </h2>
@@ -360,7 +489,7 @@ const HomePage = () => {
                 type="button"
                 onClick={() => setIsRequestsOpen(false)}
                 aria-label="Close pending requests"
-                className="rounded-lg px-3 py-2 text-sm font-semibold text-[#b8bac2] transition hover:bg-white/5 hover:text-[#f5f5f5]"
+                className="rounded-lg px-3 py-2 text-sm font-semibold text-base-content/70 transition hover:bg-base-content/5 hover:text-base-content"
               >
                 Close
               </button>

@@ -36,7 +36,7 @@ const Avatar = ({
 
   return (
     <span
-      className={`${size} flex shrink-0 items-center justify-center rounded-full bg-[#2a2b31] text-sm font-semibold text-[#f5f5f5]`}
+      className={`${size} flex shrink-0 items-center justify-center rounded-full bg-base-300 text-sm font-semibold text-base-content`}
       aria-hidden="true"
     >
       {getInitials(name)}

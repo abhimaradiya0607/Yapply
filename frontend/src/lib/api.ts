@@ -192,4 +192,55 @@ export async function rejectFriendRequest(requestId: string) {
 export async function getStreamToken() {
   const response=await axiosInstance.get("/chat/token");
   return response.data;
+  
+}
+
+export const notificationQueryKeys = {
+  list: ["notifications"] as const,
+  unreadCount: ["notificationUnreadCount"] as const,
+};
+
+export type NotificationType = "friend_request" | "friend_request_accepted";
+
+export type AppNotification = {
+  id: string
+  type: NotificationType
+  entityId: string
+  readAt: string | null
+  createdAt: string
+  actor: {
+    id: string
+    fullname: string
+    profileurl?: string | null
+    location?: string | null
+    bio?: string | null
+    nativeLanguage?: string | null
+    learningLanguage?: string | null
+  }
+}
+
+export async function getNotifications(): Promise<AppNotification[]> {
+  const response = await axiosInstance.get<{
+    success: true
+    data: AppNotification[]
+  }>("/notifications")
+  return response.data.data
+}
+
+export async function getUnreadNotificationCount(): Promise<number> {
+  const response = await axiosInstance.get<{
+    success: true
+    data: { unreadCount: number }
+  }>("/notifications/unread-count")
+  return response.data.data.unreadCount
+}
+
+export async function markNotificationAsRead(id: string) {
+  const response = await axiosInstance.patch(`/notifications/${id}/read`)
+  return response.data
+}
+
+export async function markAllNotificationsAsRead() {
+  const response = await axiosInstance.patch("/notifications/read-all")
+  return response.data
 }
