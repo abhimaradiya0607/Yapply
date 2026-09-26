@@ -3,6 +3,7 @@ import { CircleAlert, Languages } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { signUp ,type BackendErrorResponse} from '../lib/api'
+import { getGoogleAuthUrl } from '../lib/googleOAuth'
 import axios from "axios";
 
 const getErrorMessage = (error: unknown): string => {
@@ -217,7 +218,31 @@ const SignUpPage = () => {
                   )}
                 </button>
 
-                <p className="text-center text-[14px] leading-5 text-muted">
+                <div className="my-5 flex items-center gap-4 text-[13px] text-subtle">
+                  <span className="h-px flex-1 bg-border" />
+                  <span className="whitespace-nowrap">or continue with</span>
+                  <span className="h-px flex-1 bg-border" />
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    window.location.href = getGoogleAuthUrl()
+                  }}
+                  className="flex h-12 w-full items-center justify-center gap-3 rounded-[10px] border border-border bg-white text-[15px] font-medium transition hover:bg-field"
+                >
+                  <img
+                    src="/google.svg"
+                    alt=""
+                    className="size-5"
+                    onError={(event) => {
+                      event.currentTarget.style.display = "none"
+                    }}
+                  />
+                  Continue with Google
+                </button>
+
+                <p className="mt-5 text-center text-[14px] leading-5 text-muted">
                   Already have an account?{' '}
                   <Link
                     to="/login"

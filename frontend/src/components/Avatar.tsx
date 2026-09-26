@@ -1,3 +1,5 @@
+import { usableProfileImage } from "../utils/profileImage";
+
 const getInitials = (fullname?: string | null) => {
   const parts = fullname?.trim().split(/\s+/).filter(Boolean) ?? [];
   if (parts.length === 0) return "U";
@@ -20,10 +22,12 @@ const Avatar = ({
   size?: string;
   alt?: string;
 }) => {
-  if (src) {
+  const image = usableProfileImage(src);
+
+  if (image) {
     return (
       <img
-        src={src}
+        src={image}
         alt={alt ?? ""}
         className={`${size} shrink-0 rounded-full object-cover`}
       />

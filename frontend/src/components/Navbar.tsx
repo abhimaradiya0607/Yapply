@@ -1,11 +1,12 @@
-import { useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import toast from "react-hot-toast";
-import { Languages, LogOut, Search } from "lucide-react";
+import { LogOut, Search, Zap } from "lucide-react";
 
 import useAuthUser from "../hooks/useAuthUser";
 import { logout } from "../lib/api";
+import { usableProfileImage } from "../utils/profileImage";
 import NotificationBell from "./notifications/NotificationBell";
 import ThemeSelector from "./ThemeSelector";
 
@@ -35,6 +36,7 @@ const Navbar = () => {
     location.pathname === "/chat" || location.pathname.startsWith("/chat/");
 
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
 
   const { mutateAsync: logoutMutation, isPending: isLoggingOut } = useMutation({
@@ -62,28 +64,42 @@ const Navbar = () => {
   };
 
   const displayName = authUser?.fullname || "User";
-  const avatarUrl = authUser?.profileurl;
+  const avatarUrl = usableProfileImage(authUser?.profileurl);
 
-  // Minimal branding-only navbar for the chat experience.
-  if (isChatPage) {
-    return (
-      <header className="flex h-16 items-center border-b border-base-content/10 bg-base-100 px-4 sm:px-6">
-        <div className="flex items-center gap-2">
-          <Languages
-            className="size-6 text-primary"
-            strokeWidth={2}
-            aria-hidden="true"
-          />
-          <span className="text-lg font-semibold text-base-content">Yapply</span>
-        </div>
-      </header>
-    );
-  }
+  useEffect(() => {
+    if (!isProfileOpen) return;
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setIsProfileOpen(false);
+    };
+
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, [isProfileOpen]);
 
   return (
-    <header className="flex h-16 items-center gap-3 border-b border-base-content/10 bg-base-100 px-4 sm:px-6">
-      {/* Search (primary left element) */}
-      <div className="relative min-w-0 max-w-[650px] flex-1">
+    <header
+      className={`flex items-center gap-3 border-b border-base-content/10 bg-base-100 px-4 sm:px-6 ${
+        isChatPage && searchOpen ? "h-auto flex-wrap py-3" : "h-16"
+      }`}
+    >
+      {isChatPage && (
+        <Link
+          to="/"
+          aria-label="Yapply home"
+          className="flex shrink-0 items-center gap-2 text-base-content"
+        >
+          <Zap className="size-5 text-primary" strokeWidth={2} aria-hidden="true" />
+          <span className="hidden text-lg font-semibold sm:inline">Yapply</span>
+        </Link>
+      )}
+
+      {/* Search. On chat, the field is desktop-only until the search icon is opened. */}
+      <div
+        className={`relative min-w-0 max-w-[650px] flex-1 ${
+          isChatPage ? `${searchOpen ? "basis-full md:basis-auto" : "hidden"} md:block` : ""
+        }`}
+      >
         <Search
           className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-base-content/50"
           aria-hidden="true"
@@ -100,6 +116,18 @@ const Navbar = () => {
 
       {/* Right utilities */}
       <div className="ml-auto flex items-center gap-2 sm:gap-3">
+        {isChatPage && (
+          <button
+            type="button"
+            className={`${iconButton} md:hidden`}
+            aria-label="Search"
+            aria-expanded={searchOpen}
+            onClick={() => setSearchOpen((open) => !open)}
+          >
+            <Search className="size-5" aria-hidden="true" />
+          </button>
+        )}
+
         <ThemeSelector />
 
         <NotificationBell className={iconButton} />
