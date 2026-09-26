@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft, Video } from "lucide-react";
@@ -21,7 +21,6 @@ import Avatar from "../components/Avatar";
 import useAuthUser from "../hooks/useAuthUser";
 import { getStreamToken } from "../lib/api";
 import { usableProfileImage } from "../utils/profileImage";
-import CallButton from '../components/CallButton'
 
 const STREAM_API_KEY = import.meta.env.VITE_STREAM_API_KEY;
 
@@ -33,7 +32,7 @@ const buildChannelId = (userId: string, friendId: string) => {
     .slice(0, 64);
 };
 
-const ChatHeader = () => {
+const ChatHeader = ({ onVideoCall }: { onVideoCall: () => void }) => {
   const navigate = useNavigate();
   const { channel, members } = useChannelStateContext("ChatHeader");
   const { client } = useChatContext("ChatHeader");
@@ -77,9 +76,9 @@ const ChatHeader = () => {
       </div>
       <button
         type="button"
-        aria-label="Start video call"
-        title="Start video call"
-        onClick={() => navigate("/call")}
+        aria-label="Send video call link"
+        title="Send video call link"
+        onClick={onVideoCall}
         className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-content transition-colors hover:brightness-105 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary active:brightness-95"
       >
         <Video className="size-5" aria-hidden="true" />
@@ -90,10 +89,12 @@ const ChatHeader = () => {
 
 const ChatPage = () => {
   const { friendId: targetUserID } = useParams();
+  const navigate = useNavigate();
   const [chatClient, setChatClient] = useState<StreamChat | null>(null);
   const [channel, setChannel] = useState<StreamChannel | null>(null);
   const [loading, setLoading] = useState(true);
   const { authUser } = useAuthUser();
+  const watchGeneration = useRef(0);
 
   const { data: tokenData } = useQuery({
     queryKey: ["streamToken"],
@@ -102,12 +103,14 @@ const ChatPage = () => {
   });
 
   useEffect(() => {
+    if (!tokenData?.token || !authUser?.id || !targetUserID) return;
+
+    const generation = ++watchGeneration.current;
+    let watchedChannel: StreamChannel | null = null;
+    const client = StreamChat.getInstance(STREAM_API_KEY);
+
     const initChat = async () => {
-      if (!tokenData?.token || !authUser?.id || !targetUserID) return;
-
       try {
-        const client = StreamChat.getInstance(STREAM_API_KEY);
-
         await client.connectUser(
           {
             id: authUser.id,
@@ -117,6 +120,8 @@ const ChatPage = () => {
           tokenData.token,
         );
 
+        if (generation !== watchGeneration.current) return;
+
         const channelId = buildChannelId(authUser.id, targetUserID);
         const currentChannel = client.channel("messaging", channelId, {
           members: [authUser.id, targetUserID],
@@ -124,28 +129,73 @@ const ChatPage = () => {
 
         await currentChannel.watch();
 
+        if (generation !== watchGeneration.current) return;
+
+        watchedChannel = currentChannel;
         setChatClient(client);
         setChannel(currentChannel);
       } catch (error) {
+        if (generation !== watchGeneration.current) return;
         console.log("error in initializing chat :", error);
-        toast.error("Could not connect to chat. Please Try againn");
+        toast.error("Could not connect to chat. Please try again.");
       } finally {
-        setLoading(false);
+        if (generation === watchGeneration.current) setLoading(false);
       }
     };
 
-    initChat();
+    void initChat();
+
+    return () => {
+      // getInstance is shared across visits. Stop this channel watch only.
+      // disconnectUser here races StrictMode and the next conversation.
+      if (watchedChannel) {
+        void watchedChannel.stopWatching().catch(() => undefined);
+      }
+      setChatClient(null);
+      setChannel(null);
+      setLoading(true);
+    };
   }, [tokenData, authUser, targetUserID]);
 
+  if (!targetUserID) {
+    return (
+      <div className="flex h-full flex-col items-center justify-center gap-4 bg-base-100 px-6 text-center text-base-content">
+        <p className="text-lg font-semibold">No conversation selected</p>
+        <button
+          type="button"
+          onClick={() => navigate("/")}
+          className="rounded-xl bg-primary px-4 py-2.5 text-sm font-bold text-primary-content transition hover:brightness-105 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+        >
+          Back to Home
+        </button>
+      </div>
+    );
+  }
+
   if (loading || !channel || !chatClient) return <ChatLoader />;
+
+  const handleVideoCall = async () => {
+    if (!channel.id) return;
+
+    const callUrl = `${window.location.origin}/call/${channel.id}`;
+
+    try {
+      await channel.sendMessage({
+        text: `Join the video call: ${callUrl}`,
+      });
+      toast.success("Video call link sent.");
+    } catch (error) {
+      console.log("error sending video call link :", error);
+      toast.error("Couldn't send the video call link.");
+    }
+  };
 
   return (
     <div className="chat-page">
       <Chat client={chatClient}>
         <Channel channel={channel}>
-          <CallButton handleVedioCall={handleVedioCall}/>
           <Window>
-            <ChatHeader />
+            <ChatHeader onVideoCall={handleVideoCall} />
             <MessageList />
             <MessageComposer focus />
           </Window>

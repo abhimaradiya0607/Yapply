@@ -21,16 +21,16 @@ const LanguageBadge = ({
 
   return (
     <span
-      className={`inline-flex max-w-full items-center gap-2 rounded-xl bg-[#222328] px-2.5 py-1.5 ${
+      className={`inline-flex max-w-full items-center gap-2 rounded-xl bg-base-300 px-2.5 py-1.5 ${
         kind === "learning"
-          ? "border border-[#c7ff20]/20"
-          : "border border-white/[0.08]"
+          ? "border border-primary/20"
+          : "border border-base-content/10"
       }`}
     >
       <LanguageFlag language={value} />
       <span className="truncate text-sm">
-        <span className="text-xs font-medium text-[#9a9ca6]">{label} · </span>
-        <span className="font-medium text-[#f5f5f5]">{formatLanguage(value)}</span>
+        <span className="text-xs font-medium text-base-content/60">{label} · </span>
+        <span className="font-medium text-base-content">{formatLanguage(value)}</span>
       </span>
     </span>
   );

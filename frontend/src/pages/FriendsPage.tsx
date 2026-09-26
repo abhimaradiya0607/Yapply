@@ -31,21 +31,20 @@ const FriendsPage = () => {
   }, [friends, search]);
 
   return (
-    <main className="min-h-screen bg-[#111214] px-4 py-6 text-[#f5f5f5] sm:px-6 lg:px-10">
+    <main className="min-h-screen bg-base-100 px-4 py-6 text-base-content sm:px-6 lg:px-10">
       <section className="mx-auto w-full max-w-7xl">
         <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <h1 className="text-3xl font-semibold tracking-[-0.03em] text-[#f5f5f5]">
+            <h1 className="flex items-center gap-3 text-3xl font-semibold tracking-[-0.03em] text-base-content">
               Friends
-            </h1>
-            <p className="mt-1 text-sm text-[#b8bac2]">
-              Your language partners
               {!isLoading && !isError && (
-                <span>
-                  {" "}
-                  · {friends.length} {friends.length === 1 ? "friend" : "friends"}
+                <span className="inline-flex h-7 min-w-7 items-center justify-center rounded-full bg-primary px-2 text-sm font-bold text-primary-content">
+                  {friends.length}
                 </span>
               )}
+            </h1>
+            <p className="mt-1 text-sm text-base-content/70">
+              Your language partners
             </p>
           </div>
         </div>
@@ -58,7 +57,7 @@ const FriendsPage = () => {
               value={search}
               onChange={(event) => setSearch(event.target.value)}
               placeholder="Search friends..."
-              className="h-12 w-full rounded-2xl border border-white/10 bg-[#1a1b1e] px-4 text-sm text-[#f5f5f5] outline-none placeholder:text-[#9a9ca6] focus:border-[#c7ff20]/40 focus:ring-2 focus:ring-[#c7ff20]/10"
+              className="h-12 w-full rounded-2xl border border-base-content/10 bg-base-200 px-4 text-sm text-base-content outline-none placeholder:text-base-content/60 focus:border-primary/40 focus:ring-2 focus:ring-primary/10"
             />
           </label>
         )}
@@ -71,17 +70,17 @@ const FriendsPage = () => {
               ))}
             </div>
           ) : isError ? (
-            <div className="rounded-[24px] border border-white/[0.06] bg-[#1a1b1e] px-6 py-8">
-              <h2 className="text-base font-semibold text-[#f5f5f5]">
+            <div className="rounded-[24px] border border-base-content/10 bg-base-200 px-6 py-8">
+              <h2 className="text-base font-semibold text-base-content">
                 Couldn&apos;t load your friends
               </h2>
-              <p className="mt-1 text-sm text-[#b8bac2]">Try again in a moment.</p>
+              <p className="mt-1 text-sm text-base-content/70">Try again in a moment.</p>
               <button
                 type="button"
                 onClick={() =>
                   void queryClient.invalidateQueries({ queryKey: ["friends"] })
                 }
-                className="mt-4 rounded-xl border border-white/10 px-4 py-2 text-sm font-semibold text-[#f5f5f5] transition hover:bg-white/5 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#c7ff20]"
+                className="mt-4 rounded-xl border border-base-content/10 px-4 py-2 text-sm font-semibold text-base-content transition hover:bg-base-content/5 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
               >
                 Retry
               </button>
@@ -89,7 +88,7 @@ const FriendsPage = () => {
           ) : friends.length === 0 ? (
             <FriendsEmptyState />
           ) : visibleFriends.length === 0 ? (
-            <p className="rounded-[28px] border border-dashed border-white/10 px-4 py-10 text-center text-sm text-[#b8bac2]">
+            <p className="rounded-[28px] border border-dashed border-base-content/10 px-4 py-10 text-center text-sm text-base-content/70">
               No friends match that search.
             </p>
           ) : (

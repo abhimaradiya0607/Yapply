@@ -5,6 +5,7 @@ import authRoutes from './modules/auth/auth.routes.js';
 import userRoutes from './modules/users/user.routes.js';
 import friendRoutes from './modules/friends/friends.routes.js'
 import chatRoutes from './modules/chats/chat.routes.js'
+import notificationRoutes from './modules/notifications/notification.routes.js'
 
 
 const app = express();
@@ -24,6 +25,7 @@ app.use('/api/auth',authRoutes);
 app.use("/api/users", userRoutes);
 app.use('/api/friend-request',friendRoutes);
 app.use('/api/chat',chatRoutes);
+app.use('/api/notifications', notificationRoutes);
 
 
 

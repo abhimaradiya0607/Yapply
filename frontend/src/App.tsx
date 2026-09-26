@@ -1,6 +1,5 @@
 import { Navigate, Route, Routes } from "react-router-dom";
 import { Toaster } from "react-hot-toast";
-import "./App.css";
 import HomePage from "./pages/HomePage";
 import SignUpPage from "./pages/SignUpPage";
 import LoginPage from "./pages/LoginPage";
@@ -35,7 +34,7 @@ function App() {
               <HomePage/>
           </Layout>
         ):(
-          <Navigate to={!isAuthenticated?'/login':'onboarding'}/>
+          <Navigate to={!isAuthenticated?'/login':'/onboarding'}/>
         )}
         />
         <Route
@@ -99,9 +98,13 @@ function App() {
           }
         />
         <Route
-          path="/call"
+          path="/call/:id"
           element={
-            isAuthenticated ? <CallPage /> : <Navigate to="/login" replace />
+            isAuthenticated && isOnboarded ? (
+              <CallPage/>
+            ) : (
+              <Navigate to={!isAuthenticated?"/login":"/onboarding" } />
+            )
           }
         />
         <Route

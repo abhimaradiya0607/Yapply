@@ -28,22 +28,22 @@ const FriendsSection = ({
         <div>
           <h2
             id="friends-heading"
-            className="text-xl font-semibold text-[#f5f5f5]"
+            className="flex items-center gap-2 text-xl font-semibold text-base-content"
           >
             Friends
             {!isLoading && !isError && (
-              <span className="ml-2 text-sm font-medium text-[#b8bac2]">
-                · {friends.length}
+              <span className="inline-flex h-6 min-w-6 items-center justify-center rounded-full bg-primary px-2 text-xs font-bold text-primary-content">
+                {friends.length}
               </span>
             )}
           </h2>
-          <p className="mt-1 text-sm text-[#9a9ca6]">Your language partners</p>
+          <p className="mt-1 text-sm text-base-content/60">Your language partners</p>
         </div>
 
         {friends.length > PREVIEW_LIMIT && (
           <Link
             to="/friends"
-            className="shrink-0 text-sm font-semibold text-[#c7ff20] transition hover:text-[#d3ff4d] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#c7ff20]"
+            className="shrink-0 text-sm font-semibold text-primary transition hover:brightness-110 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
           >
             View all →
           </Link>
@@ -58,15 +58,15 @@ const FriendsSection = ({
             ))}
           </div>
         ) : isError ? (
-          <div className="rounded-[24px] border border-white/[0.06] bg-[#1a1b1e] px-6 py-8">
-            <h3 className="text-base font-semibold text-[#f5f5f5]">
+          <div className="rounded-[24px] border border-base-content/10 bg-base-200 px-6 py-8">
+            <h3 className="text-base font-semibold text-base-content">
               Couldn&apos;t load your friends
             </h3>
-            <p className="mt-1 text-sm text-[#b8bac2]">Try again in a moment.</p>
+            <p className="mt-1 text-sm text-base-content/70">Try again in a moment.</p>
             <button
               type="button"
               onClick={onRetry}
-              className="mt-4 rounded-xl border border-white/10 bg-[#222328] px-4 py-2 text-sm font-semibold text-[#f5f5f5] transition hover:bg-[#2a2b31] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#c7ff20]"
+              className="mt-4 rounded-xl border border-base-content/10 bg-base-300 px-4 py-2 text-sm font-semibold text-base-content transition hover:bg-base-content/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
             >
               Retry
             </button>
