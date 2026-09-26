@@ -3,6 +3,7 @@ import { CircleAlert, Eye, EyeOff, Languages } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import axios from 'axios'
 import type { BackendErrorResponse } from '../lib/api'
+import { getGoogleAuthUrl } from '../lib/googleOAuth'
 import useLogin from '../hooks/useLogin'
 
 
@@ -51,30 +52,7 @@ const LoginPage = () => {
 
 
   const handleGoogleLogin = () => {
-    const redirectUri =
-      import.meta.env.VITE_GOOGLE_REDIRECT_URI
-  
-    const clientId =
-      import.meta.env.VITE_GOOGLE_CLIENT_ID
-  
-    console.log('Client ID:', clientId)
-    console.log('Redirect URI:', redirectUri)
-  
-    const params = new URLSearchParams({
-      client_id: clientId,
-      redirect_uri: redirectUri,
-      response_type: 'code',
-      scope: 'openid email profile',
-      access_type: 'offline',
-      prompt: 'select_account',
-    })
-  
-    const googleUrl =
-      `https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`
-  
-    console.log('Google URL:', googleUrl)
-  
-    window.location.href = googleUrl
+    window.location.href = getGoogleAuthUrl()
   }
 
   return (

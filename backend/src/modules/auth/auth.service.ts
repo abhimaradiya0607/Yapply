@@ -15,10 +15,18 @@ export const registerUser = async (data: RegisterInput) => {
   const [existingUser] = await db
     .select({
       id: users.id,
+      passwordHash: users.passwordHash,
     })
     .from(users)
     .where(eq(users.email, data.email))
     .limit(1);
+
+    if (existingUser && !existingUser.passwordHash) {
+      throw new AppError(
+        "This email is already registered with Google. Continue with Google to sign in.",
+        409
+      );
+    }
 
     if (existingUser) {
       throw new AppError(
@@ -232,7 +240,7 @@ export const loginWithGoogle = async (code: string) => {
 
     if (existingEmailUser) {
       throw new AppError(
-        "An account with this email already exists. Login with your password first, then connect Google from account settings.",
+        "An account with this email already exists. Sign in with your password instead of Google.",
         409
       );
     }

@@ -1,7 +1,13 @@
-const CallPage = () => {
-  return (
-    <div>CallPage</div>
-  )
-}
+import CallButton from "../components/CallButton";
 
-export default CallPage
+const CallPage = () => {
+  const handleVideoCall = () => {};
+
+  return (
+    <div className="relative h-full">
+      <CallButton handleVideoCall={handleVideoCall} />
+    </div>
+  );
+};
+
+export default CallPage;

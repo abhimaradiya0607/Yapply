@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 
 import useAuthUser from "../hooks/useAuthUser";
+import { usableProfileImage } from "../utils/profileImage";
 
 type NavigationItem = {
   label: string;
@@ -52,7 +53,7 @@ const Sidebar = ({ variant = "responsive", onNavigate }: SidebarProps) => {
 
   const isFull = variant === "full";
   const displayName = authUser?.fullname || "User";
-  const avatarUrl = authUser?.profileurl;
+  const avatarUrl = usableProfileImage(authUser?.profileurl);
 
   return (
     <aside

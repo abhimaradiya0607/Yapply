@@ -7,6 +7,8 @@ import {
   QueryClient,
   QueryClientProvider,
 } from '@tanstack/react-query'
+import "stream-chat-react/dist/css/index.css";
+import './chat.css'
 
 const queryClient = new QueryClient()
 
