@@ -13,6 +13,9 @@ import PageLoader from "./components/PageLoader";
 import GoogleCallbackPage from "./pages/GoogleCallbackPage";
 import Layout from "./components/Layout";
 import ThemeManager from "./components/ThemeManager";
+import LiveRoomPage from "./pages/LiveRoomPage";
+import LiveRoomPreviewPage from "./pages/LiveRoomPreviewPage";
+import LiveRoomsPage from "./pages/LiveRoomsPage";
 
 function App() {
 
@@ -116,6 +119,38 @@ function App() {
               </Layout>
             ):(
               <Navigate to={!isAuthenticated?"/login":"/onboarding" } />
+            )
+          }
+        />
+        <Route
+          path="/live-room"
+          element={
+            isAuthenticated && isOnboarded ? (
+              <Layout showSideBar={true}>
+                <LiveRoomsPage />
+              </Layout>
+            ) : (
+              <Navigate to={!isAuthenticated ? "/login" : "/onboarding"} />
+            )
+          }
+        />
+        <Route
+          path="/live-room/:roomCode/preview"
+          element={
+            isAuthenticated && isOnboarded ? (
+              <LiveRoomPreviewPage />
+            ) : (
+              <Navigate to={!isAuthenticated ? "/login" : "/onboarding"} />
+            )
+          }
+        />
+        <Route
+          path="/live-room/:roomCode"
+          element={
+            isAuthenticated && isOnboarded ? (
+              <LiveRoomPage />
+            ) : (
+              <Navigate to={!isAuthenticated ? "/login" : "/onboarding"} />
             )
           }
         />

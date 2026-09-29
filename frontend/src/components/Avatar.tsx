@@ -15,11 +15,13 @@ const Avatar = ({
   name,
   src,
   size = "size-12",
+  textSize = "text-sm",
   alt,
 }: {
   name?: string | null;
   src?: string | null;
   size?: string;
+  textSize?: string;
   alt?: string;
 }) => {
   const image = usableProfileImage(src);
@@ -36,7 +38,7 @@ const Avatar = ({
 
   return (
     <span
-      className={`${size} flex shrink-0 items-center justify-center rounded-full bg-base-300 text-sm font-semibold text-base-content`}
+      className={`${size} ${textSize} flex shrink-0 items-center justify-center rounded-full bg-base-300 font-semibold text-base-content`}
       aria-hidden="true"
     >
       {getInitials(name)}

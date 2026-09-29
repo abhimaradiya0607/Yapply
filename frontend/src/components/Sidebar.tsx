@@ -4,6 +4,7 @@ import {
   House,
   UsersRound,
   Zap,
+  UserGroup,
   type LucideIcon,
 } from "lucide-react";
 
@@ -24,6 +25,7 @@ const navigationItems: NavigationItem[] = [
   { label: "Home", href: "/", icon: House, end: true },
   { label: "Friends", href: "/friends", icon: UsersRound },
   { label: "Notifications", href: "/notifications", icon: Bell },
+  { label: "Live Rooms", href: "/live-room", icon: UserGroup },
 ];
 
 const getInitials = (fullname?: string): string => {
