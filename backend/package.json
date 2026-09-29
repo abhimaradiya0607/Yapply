@@ -26,7 +26,9 @@
     "express": "^5.1.0",
     "google-auth-library": "^11.0.2",
     "jose": "^6.2.12",
+    "livekit-server-sdk": "^2.19.1",
     "pg": "^8.16.3",
+    "socket.io": "^4.8.4",
     "stream-chat": "^9.52.1",
     "zod": "^4.6.5"
   },

@@ -244,3 +244,33 @@ export async function markAllNotificationsAsRead() {
   const response = await axiosInstance.patch("/notifications/read-all")
   return response.data
 }
+
+export const roomQueryKeys = {
+  detail: (roomCode: string) => ["room", roomCode] as const,
+};
+
+export type LiveRoomStatus = "active" | "ended";
+
+export type LiveRoom = {
+  id: string;
+  roomCode: string;
+  hostId: string;
+  status: LiveRoomStatus;
+  isHost: boolean;
+  createdAt: string;
+  endedAt: string | null;
+};
+
+export async function createLiveRoom(): Promise<LiveRoom> {
+  const response = await axiosInstance.post<{ success: true; room: LiveRoom }>(
+    "/rooms",
+  );
+  return response.data.room;
+}
+
+export async function getLiveRoom(roomCode: string): Promise<LiveRoom> {
+  const response = await axiosInstance.get<{ success: true; room: LiveRoom }>(
+    `/rooms/${roomCode}`,
+  );
+  return response.data.room;
+}
