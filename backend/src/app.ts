@@ -6,16 +6,10 @@ import userRoutes from './modules/users/user.routes.js';
 import friendRoutes from './modules/friends/friends.routes.js'
 import chatRoutes from './modules/chats/chat.routes.js'
 import notificationRoutes from './modules/notifications/notification.routes.js'
-import {createServer} from 'node:http';
-import {Server} from 'socket.io';
-import { connectToSocket } from './realtime/socket.js';
 import liveKitRouter from './livekit/livekit.route.js';
 import roomRoutes from './modules/rooms/room.routes.js';
 
 const app = express();
-// const server = createServer(app);
-// const io = connectToSocket(new Server(server));
-
 
 app.use(
   cors({

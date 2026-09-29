@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router";
 import { useQuery } from "@tanstack/react-query";
+import { MessageSquare } from "lucide-react";
 import toast from "react-hot-toast";
 import {
   CallControls,
@@ -15,6 +16,8 @@ import {
 } from "@stream-io/video-react-sdk";
 import "@stream-io/video-react-sdk/dist/css/styles.css";
 
+import MeetingChat from "../components/call/MeetingChat";
+import { useMeetingChat } from "../components/call/useMeetingChat";
 import PageLoader from "../components/PageLoader";
 import useAuthUser from "../hooks/useAuthUser";
 import { getStreamToken } from "../lib/api";
@@ -118,9 +121,13 @@ const CallPage = () => {
 };
 
 const CallContent = () => {
+  const { id: callId } = useParams();
+  const { authUser } = useAuthUser();
   const { useCallCallingState } = useCallStateHooks();
   const callingState = useCallCallingState();
   const navigate = useNavigate();
+  const [chatOpen, setChatOpen] = useState(false);
+  const chat = useMeetingChat(callId);
 
   useEffect(() => {
     if (callingState === CallingState.LEFT) {
@@ -131,10 +138,39 @@ const CallContent = () => {
   if (callingState === CallingState.LEFT) return null;
 
   return (
-    <StreamTheme>
-      <SpeakerLayout />
-      <CallControls />
-    </StreamTheme>
+    <div className="flex h-dvh min-h-0 bg-base-100">
+      <StreamTheme className="flex min-h-0 min-w-0 flex-1 flex-col">
+        <SpeakerLayout />
+        <div className="relative z-40 flex shrink-0 items-center justify-center gap-2">
+          <CallControls />
+          <button
+            type="button"
+            onClick={() => setChatOpen((open) => !open)}
+            aria-pressed={chatOpen}
+            aria-label={chatOpen ? "Close chat" : "Open chat"}
+            className={[
+              "mb-4 flex size-10 items-center justify-center rounded-full transition-colors",
+              chatOpen
+                ? "bg-primary text-primary-content"
+                : "bg-base-300 text-base-content hover:bg-base-content/15",
+            ].join(" ")}
+          >
+            <MessageSquare className="size-4" aria-hidden="true" />
+          </button>
+        </div>
+      </StreamTheme>
+
+      {chatOpen && authUser && (
+        <MeetingChat
+          messages={chat.messages}
+          currentUserId={authUser.id}
+          connected={chat.connected}
+          error={chat.error}
+          onSend={chat.sendMessage}
+          onClose={() => setChatOpen(false)}
+        />
+      )}
+    </div>
   );
 };
 
