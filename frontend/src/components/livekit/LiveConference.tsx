@@ -21,6 +21,7 @@ import {
   Copy,
   Link2,
   Loader2,
+  MessageSquare,
   Mic,
   MicOff,
   MonitorUp,
@@ -36,6 +37,8 @@ import {
   type LucideIcon,
 } from "lucide-react";
 
+import MeetingChat from "../call/MeetingChat";
+import { useMeetingChat } from "../call/useMeetingChat";
 import { roomShareUrl } from "../../utils/roomCode";
 
 type LiveConferenceProps = {
@@ -176,7 +179,9 @@ const LiveConference = ({ roomCode, onLeaveStart, onLeave }: LiveConferenceProps
     lastMicrophoneError,
   } = useLocalParticipant();
   const [participantsOpen, setParticipantsOpen] = useState(false);
+  const [chatOpen, setChatOpen] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
+  const chat = useMeetingChat(roomCode);
   const [mediaBusy, setMediaBusy] = useState<"audio" | "video" | "screen" | null>(null);
   const moreRef = useRef<HTMLDivElement>(null);
 
@@ -328,6 +333,7 @@ const LiveConference = ({ roomCode, onLeaveStart, onLeave }: LiveConferenceProps
         </p>
       )}
 
+      <div className="relative flex min-h-0 flex-1">
       <div className="relative min-h-0 flex-1">
         <main className="h-full overflow-auto">
           <div className="flex min-h-full items-center justify-center px-3 pb-28 pt-4 sm:px-5">
@@ -368,9 +374,8 @@ const LiveConference = ({ roomCode, onLeaveStart, onLeave }: LiveConferenceProps
             </p>
           </div>
         )}
-      </div>
 
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 z-40 flex justify-center px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 z-40 flex justify-center px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
         <div className="pointer-events-auto flex max-w-full flex-wrap items-center justify-center gap-2 rounded-2xl border border-base-content/10 bg-base-200 p-2">
           <button
             type="button"
@@ -420,6 +425,7 @@ const LiveConference = ({ roomCode, onLeaveStart, onLeave }: LiveConferenceProps
             type="button"
             onClick={() => {
               setMoreOpen(false);
+              setChatOpen(false);
               setParticipantsOpen((open) => !open);
             }}
             aria-pressed={participantsOpen}
@@ -428,6 +434,21 @@ const LiveConference = ({ roomCode, onLeaveStart, onLeave }: LiveConferenceProps
           >
             <Users className="size-5" aria-hidden="true" />
             <span className="hidden md:inline">Participants</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              setMoreOpen(false);
+              setParticipantsOpen(false);
+              setChatOpen((open) => !open);
+            }}
+            aria-pressed={chatOpen}
+            aria-label={chatOpen ? "Close chat" : "Open chat"}
+            className={controlClass(chatOpen)}
+          >
+            <MessageSquare className="size-5" aria-hidden="true" />
+            <span className="hidden md:inline">Chat</span>
           </button>
 
           <div className="relative" ref={moreRef}>
@@ -479,6 +500,20 @@ const LiveConference = ({ roomCode, onLeaveStart, onLeave }: LiveConferenceProps
             Leave
           </button>
         </div>
+        </div>
+      </div>
+
+      {chatOpen && (
+        <MeetingChat
+          className="absolute inset-x-0 top-0 bottom-28 z-30 flex min-h-0 flex-col border-base-content/10 bg-base-100 md:static md:inset-auto md:z-auto md:h-full md:w-[320px] md:shrink-0 md:border-l"
+          messages={chat.messages}
+          currentUserId={localParticipant.identity}
+          connected={chat.connected}
+          error={chat.error}
+          onSend={chat.sendMessage}
+          onClose={() => setChatOpen(false)}
+        />
+      )}
       </div>
 
       {participantsOpen && (
