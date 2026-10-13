@@ -1,5 +1,6 @@
 import "dotenv/config";
 import { defineConfig } from "drizzle-kit";
+import { connectionStringForRuntime } from "./src/db/database-url.ts";
 
 const DATABASE_URL = process.env.DATABASE_URL;
 
@@ -12,6 +13,6 @@ export default defineConfig({
   schema: "./src/db/schema/index.ts",
   out: "./drizzle",
   dbCredentials: {
-    url: DATABASE_URL,
+    url: connectionStringForRuntime(DATABASE_URL),
   },
 });

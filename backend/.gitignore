@@ -5,6 +5,5 @@ dist
 *.log
 npm-debug.log*
 .DS_Store
-drizzle
 coverage
 .vscode

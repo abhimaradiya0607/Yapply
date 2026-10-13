@@ -1,18 +1,27 @@
-import type { Request, Response } from "express";
+import type { CookieOptions, Request, Response } from "express";
 import { loginUser, loginWithGoogle, logoutUser, registerUser } from "./auth.service.js";
 import { AppError } from "../../utils/app-error.js";
 
+const isProduction = process.env.NODE_ENV === "production";
+
+const authCookieOptions: CookieOptions = {
+  httpOnly: true,
+  secure: isProduction,
+  sameSite: isProduction ? "none" : "strict",
+};
+
+const setAuthCookie = (res: Response, token: string) => {
+  res.cookie("jwt", token, {
+    ...authCookieOptions,
+    maxAge: 7 * 24 * 60 * 60 * 1000,
+  });
+};
 
 export const register = async (req: Request, res: Response) => {
   try {
     const { user, token } = await registerUser(req.body);
 
-    res.cookie("jwt", token, {
-      maxAge: 7 * 24 * 60 * 60 * 1000,
-      httpOnly: true,
-      sameSite: "strict",
-      secure: process.env.NODE_ENV === "production",
-    });
+    setAuthCookie(res, token);
 
     return res.status(201).json({
       success: true,
@@ -38,12 +47,7 @@ export const login=async (req:Request,res:Response) => {
   try {
     const {user,token}=await loginUser(req.body);
 
-    res.cookie("jwt",token,{
-      maxAge: 7 * 24 * 60 * 60 * 1000,
-      httpOnly: true,
-      sameSite: "strict",
-      secure: process.env.NODE_ENV === "production",
-    })
+    setAuthCookie(res, token);
 
     return res.status(200).json({
       success: true,
@@ -99,12 +103,7 @@ export const googlelogin=async (req:Request,res:Response) => {
 
     const { user, token } = await loginWithGoogle(code);
 
-    res.cookie("jwt", token, {
-      maxAge: 7 * 24 * 60 * 60 * 1000,
-      httpOnly: true,
-      sameSite: "strict",
-      secure: process.env.NODE_ENV === "production",
-    });
+    setAuthCookie(res, token);
 
     return res.status(200).json({
       success: true,
@@ -135,11 +134,7 @@ export const logout=async (_req:Request,res:Response) => {
   const result=await logoutUser();
 
   try {
-    res.clearCookie("jwt",{
-      httpOnly: true,
-      sameSite: "strict",
-      secure: process.env.NODE_ENV === "production",
-    });
+    res.clearCookie("jwt", authCookieOptions);
 
     return res.status(200).json({
       success:true,
