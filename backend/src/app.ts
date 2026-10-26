@@ -36,4 +36,11 @@ app.get("/", (_req, res) => {
   res.json({ message: "Yapply API is running" });
 });
 
+app.get("/api/health", (_req, res) => {
+  res.status(200).json({
+    status: "healthy",
+    timestamp: new Date().toISOString(),
+  });
+});
+
 export default app;
